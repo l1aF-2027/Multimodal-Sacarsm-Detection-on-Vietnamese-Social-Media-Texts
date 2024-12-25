@@ -100,10 +100,21 @@ def format_timestamp(timestamp):
     dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')  # Parse string to datetime
     return dt.strftime('%H:%M, %d/%m/%Y')  # Format as Hour:Minute, Day/Month/Year
 
+def encode_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
 def show_post(post):
+    # Handle image source
+    if post['image'].startswith('http'):  # Online URL
+        img_src = post['image']
+    else:  # Local file path
+        encoded_image = encode_image(post['image'])
+        img_src = f"data:image/png;base64,{encoded_image}"
+
     # Container for the post layout
     with st.container():
-        # Add a styled div container for the post
+        # Styled HTML post
         st.markdown(
             f"""
             <div style="
@@ -127,7 +138,7 @@ def show_post(post):
             
             <!-- Image -->
             <div style="text-align: center;">
-                <img src="{post['image']}">
+                <img src="{img_src}" style="max-width: 100%; border-radius: 10px;">
             </div>
             
             </div>
