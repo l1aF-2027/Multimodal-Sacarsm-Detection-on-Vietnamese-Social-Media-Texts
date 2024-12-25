@@ -12,7 +12,6 @@ import torch
 from transformers import AutoImageProcessor, AutoModelForImageClassification, AutoTokenizer, AutoModel, AutoModelForMaskedLM
 import numpy as np
 import cv2
-import gc
 from tensorflow.keras.callbacks import LearningRateScheduler
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import train_test_split
@@ -101,7 +100,7 @@ class CombinedSarcasmClassifier:
         self.jina_model = AutoModel.from_pretrained("jinaai/jina-embeddings-v3", 
                                                    trust_remote_code=True,
                                                    torch_dtype=torch.float32)
-        self.device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         # Define label mapping
         self.label_mapping = {
@@ -312,8 +311,7 @@ class CombinedSarcasmClassifier:
     def summary(self):
         self.model.summary()
 #-----------------------------------------------------------------------------------------------------
-gc.collect()
-@st.cache_resource(ttl=3600)  
+@st.cache
 def load_combined_sarcasm_classifier():
     classifier = CombinedSarcasmClassifier()
     classifier.build()
