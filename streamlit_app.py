@@ -5,6 +5,6 @@ page = option_menu(
     menu_title= "AI002",
     options = ["Main Posts", "Review Posts"],
     icons = ["clipboard", "check-circle"],
-    default_option = "Main Posts",
+    default_index = 0,
     orientation="horizontal",
 )
