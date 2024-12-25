@@ -1,8 +1,36 @@
 import streamlit as st
-from streamlit_option_menu import option_menu
 import os
 import json
 from datetime import datetime
+
+# Custom CSS for the sidebar
+st.markdown("""
+    <style>
+    [data-testid="stSidebar"] {
+        background-color: #f8f9fa;
+        padding-top: 2rem;
+        max-width: 20rem !important;
+    }
+    
+    [data-testid="stSidebarNav"] {
+        background-color: transparent;
+    }
+    
+    .css-1d391kg {
+        padding-top: 2rem;
+    }
+    
+    .sidebar-content {
+        padding: 1rem;
+    }
+    
+    .sidebar-title {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # File paths for storing data
 PENDING_FILE = 'pending_posts.json'
@@ -37,11 +65,7 @@ def add_post(post, file_path):
 def approve_post(index):
     pending_posts = load_posts(PENDING_FILE)
     approved_posts = load_posts(APPROVED_FILE)
-
-    # Move the post to approved
     approved_posts.append(pending_posts.pop(index))
-    
-    # Save changes
     save_posts(PENDING_FILE, pending_posts)
     save_posts(APPROVED_FILE, approved_posts)
 
@@ -53,58 +77,66 @@ def display_post(post):
 
 # Main function
 def main():
-    st.set_page_config(page_title="Facebook Group Simulation", page_icon=":speech_balloon:", layout="wide")
-    st.sidebar.title("streamlit app")
-    st.sidebar.write("draw support")
+    st.set_page_config(
+        page_title="Facebook Group Simulation",
+        page_icon=":speech_balloon:",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
 
-    # Sidebar navigation
-    page = None
+    # Custom sidebar
     with st.sidebar:
-        page = option_menu("Navigation", ["Group Page", "Review Posts"])
+        st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
+        st.markdown('<p class="sidebar-title">streamlit app</p>', unsafe_allow_html=True)
+        st.markdown('<p class="sidebar-title">draw support</p>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Navigation
+        page = st.radio("", ["Group Page", "Review Posts"], label_visibility="collapsed")
 
     if page == "Group Page":
         st.header("Approved Posts")
-        # approved_posts = load_posts(APPROVED_FILE)
+        approved_posts = load_posts(APPROVED_FILE)
 
-        # # Display approved posts
-        # for post in approved_posts:
-        #     display_post(post)
-        #     st.markdown("---")
+        # Display approved posts
+        for post in approved_posts:
+            display_post(post)
+            st.markdown("---")
 
-        # # Form to create a new post
-        # st.subheader("Create a New Post")
-        # image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-        # text = st.text_area("Post text")
-        # if st.button("Submit"):
-        #     if image and text:
-        #         # Save the uploaded image
-        #         image_path = os.path.join('uploads', image.name)
-        #         os.makedirs('uploads', exist_ok=True)
-        #         with open(image_path, "wb") as f:
-        #             f.write(image.getbuffer())
+        # Form to create a new post
+        st.subheader("Create a New Post")
+        image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+        text = st.text_area("Post text")
+        if st.button("Submit"):
+            if image and text:
+                # Save the uploaded image
+                image_path = os.path.join('uploads', image.name)
+                os.makedirs('uploads', exist_ok=True)
+                with open(image_path, "wb") as f:
+                    f.write(image.getbuffer())
 
-        #         # Create post
-        #         post = {
-        #             "image": image_path,
-        #             "text": text,
-        #             "timestamp": str(datetime.now())
-        #         }
-        #         add_post(post, PENDING_FILE)
-        #         st.success("Your post has been submitted for review!")
-        #     else:
-        #         st.error("Please upload an image and write text.")
+                # Create post
+                post = {
+                    "image": image_path,
+                    "text": text,
+                    "timestamp": str(datetime.now())
+                }
+                add_post(post, PENDING_FILE)
+                st.success("Your post has been submitted for review!")
+            else:
+                st.error("Please upload an image and write text.")
 
     elif page == "Review Posts":
         st.header("Pending Posts")
-        # pending_posts = load_posts(PENDING_FILE)
+        pending_posts = load_posts(PENDING_FILE)
 
-        # # Display pending posts with approve buttons
-        # for i, post in enumerate(pending_posts):
-        #     display_post(post)
-        #     if st.button(f"Approve Post {i+1}", key=i):
-        #         approve_post(i)
-        #         st.experimental_rerun()
-        #     st.markdown("---")
+        # Display pending posts with approve buttons
+        for i, post in enumerate(pending_posts):
+            display_post(post)
+            if st.button(f"Approve Post {i+1}", key=i):
+                approve_post(i)
+                st.experimental_rerun()
+            st.markdown("---")
 
 if __name__ == "__main__":
     main()
