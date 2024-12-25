@@ -1,6 +1,11 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 
+st.set_page_config(
+    page_title="Multimodal Sarcasm Detection on Vietnamese Social Media Texts",
+    page_icon="image.png"
+)
+
 # Custom CSS for styling
 st.markdown("""
     <style>
