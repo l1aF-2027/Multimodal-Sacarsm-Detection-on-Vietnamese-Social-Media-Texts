@@ -41,7 +41,7 @@ st.markdown("""
         background-color: #e6e6e6 !important;
     }
     .nav-link.active {
-        background-color: #CCCCCC !important;  /* Light blue-gray color */
+        background-color: #AAAAAA	 !important;  /* Light blue-gray color */
         color: #333333 !important;
     }
     </style>
@@ -70,7 +70,7 @@ page = option_menu(
             "--hover-color": "#e6e6e6",
         },
         "nav-link-selected": {
-            "background-color": "#CCCCCC",  # Light blue-gray when selected
+            "background-color": "#AAAAAA",  # Light blue-gray when selected
         },
     }
 )
