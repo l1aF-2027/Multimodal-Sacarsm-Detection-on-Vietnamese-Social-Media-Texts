@@ -96,8 +96,8 @@ class CombinedSarcasmClassifier:
         self.model = None
         self.vit_processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
         self.vit_model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224")
-        self.jina_tokenizer = AutoTokenizer.from_pretrained("uitnlp/visobert")
-        self.jina_model = AutoModel.from_pretrained("uitnlp/visobert", 
+        self.jina_tokenizer = AutoTokenizer.from_pretrained("jinaai/jina-embeddings-v3", usse_fast=False)
+        self.jina_model = AutoModel.from_pretrained("jinaai/jina-embeddings-v3", 
                                                    trust_remote_code=True,
                                                    torch_dtype=torch.float32)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -122,7 +122,7 @@ class CombinedSarcasmClassifier:
         reverse_mapping = {v: k for k, v in self.label_mapping.items()}
         return [reverse_mapping[idx] for idx in numerical_labels]
 
-    def build(self, image_dim=1000, text_dim=768):
+    def build(self, image_dim=1000, text_dim=1024):
         image_input = Input(shape=(image_dim,), name='image_input')
         text_input = Input(shape=(text_dim,), name='text_input')
 
@@ -168,7 +168,7 @@ class CombinedSarcasmClassifier:
         for i, text in enumerate(texts, 1):
             try:
                 print(f"Processing text {i}/{total_texts}", end='\r')
-                inputs = self.jina_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512).to(self.device)
+                inputs = self.jina_tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(self.device)
                 
                 with torch.no_grad():
                     outputs = self.jina_model(**inputs)
@@ -176,7 +176,7 @@ class CombinedSarcasmClassifier:
                 text_features.append(features)
             except Exception as e:
                 print(f"\nError processing text: {str(e)}")
-                text_features.append(np.zeros(768))  # Handle errors by adding zero vectors
+                text_features.append(np.zeros(1024))  # Handle errors by adding zero vectors
 
         print("\nPreprocessing completed!")
         return np.array(image_features), np.array(text_features)
