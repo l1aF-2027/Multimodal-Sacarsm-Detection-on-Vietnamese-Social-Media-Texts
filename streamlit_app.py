@@ -127,7 +127,7 @@ def show_post(post):
             
             <!-- Image -->
             <div style="text-align: center;">
-                <img src="{post['image']}" style="max-width: 100%; border-radius: 10px;"/>
+                <img src="{post['image']}" "/>
             </div>
             
             </div>
