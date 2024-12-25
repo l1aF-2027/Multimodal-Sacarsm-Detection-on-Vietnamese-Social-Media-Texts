@@ -96,10 +96,25 @@ def approve_post(index):
     st.session_state.approved_posts.append(st.session_state.pending_posts.pop(index))
 
 # Display a single post
-def display_post(post):
-    st.image(post['image'], width=300)
-    st.write(post['text'])
-    st.caption(f"Posted on: {post['timestamp']}")
+def show_post(post):
+    # Container for the post layout
+    with st.container():
+        # Display date and time in the top-right corner
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
+                <span style="font-size: 12px; color: gray;">{post['timestamp']}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+
+        # Display caption below the timestamp
+        st.markdown(f"**{post['text']}**")
+
+        # Display image
+        st.image(post['image'], use_column_width=True)
+
 
 if page == 'Main Posts':
     text = st.text_input(label = "Post text", placeholder="Write something here...", label_visibility="hidden")
@@ -127,11 +142,11 @@ if page == 'Main Posts':
             
 elif page == 'Review Posts':
     if len(st.session_state.pending_posts) == 0:
-        st.write("No pending posts.")
+        st.title("No pending posts.")
     else:
         # Display pending posts with approve buttons
         for i, post in enumerate(st.session_state.pending_posts):
-            display_post(post)
+            show_post(post)
             if st.button(f"Approve Post {i+1}", key=i):
                 approve_post(i)
                 st.experimental_rerun()
