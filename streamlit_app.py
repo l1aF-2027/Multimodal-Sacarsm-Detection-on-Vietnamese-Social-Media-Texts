@@ -114,17 +114,16 @@ def show_post(post):
                 margin-bottom: 20px;
                 box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
             ">
-                <!-- Timestamp -->
+
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
                     <span style="font-size: 15px; color: gray;">Posted at {format_timestamp(post['timestamp'])}</span>
                 </div>
 
-                <!-- Caption -->
+
                 <div style="margin-bottom: 15px;">
                     <p style="font-size: 16px; font-weight: bold; margin: 0;">{post['text']}</p>
                 </div>
 
-                <!-- Image -->
                 <div style="text-align: center;">
                     <img src="data:image/jpeg;base64,{post['image']}" style="max-width: 100%; border-radius: 10px;"/>
                 </div>
