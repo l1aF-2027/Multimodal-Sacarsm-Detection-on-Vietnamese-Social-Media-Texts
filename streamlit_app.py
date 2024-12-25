@@ -134,7 +134,7 @@ def show_post(post):
 
                 <!-- Image -->
                 <div style="text-align: center;">
-                    <img class="post-image" src={post['image']}>
+                    <img class="post-image" src="{post['image']}">
                 </div>
             </div>
             """, 
