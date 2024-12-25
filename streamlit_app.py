@@ -3,7 +3,19 @@ from streamlit_option_menu import option_menu
 import os
 from datetime import datetime
 import base64
-
+import json 
+import pandas as pd
+import tensorflow as tf
+from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.layers import Input, Dense, concatenate, Dropout, GlobalAveragePooling1D
+import torch
+from transformers import AutoImageProcessor, AutoModelForImageClassification, AutoTokenizer, AutoModel, AutoModelForMaskedLM
+import numpy as np
+import cv2
+from tensorflow.keras.callbacks import LearningRateScheduler
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import train_test_split
+from keras.saving import register_keras_serializable
 #-----------------------------------------------------------------------------------------------------
 st.set_page_config(
     page_title="Multimodal Sarcasm Detection on Vietnamese Social Media Texts",
@@ -78,8 +90,213 @@ page = option_menu(
         },
     }
 )
-
 #-----------------------------------------------------------------------------------------------------
+class CombinedSarcasmClassifier:
+    def __init__(self):
+        self.model = None
+        self.vit_processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
+        self.vit_model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224")
+        self.jina_tokenizer = AutoTokenizer.from_pretrained("uitnlp/visobert")
+        self.jina_model = AutoModel.from_pretrained("uitnlp/visobert", 
+                                                   trust_remote_code=True,
+                                                   torch_dtype=torch.float32)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        # Define label mapping
+        self.label_mapping = {
+            'not-sarcasm': 0,
+            'sarcasm': 1
+        }
+        
+        # Ensure models are in float32
+        self.vit_model.to(self.device).to(torch.float32)
+        self.jina_model.to(self.device).to(torch.float32)
+
+    def encode_labels(self, labels):
+        """Convert text labels to one-hot encoded format"""
+        numerical_labels = [self.label_mapping[label] for label in labels]
+        return tf.keras.utils.to_categorical(numerical_labels, num_classes=2)
+
+    def decode_labels(self, one_hot_labels):
+        numerical_labels = np.argmax(one_hot_labels, axis=1)
+        reverse_mapping = {v: k for k, v in self.label_mapping.items()}
+        return [reverse_mapping[idx] for idx in numerical_labels]
+
+    def build(self, image_dim=1000, text_dim=768):
+        image_input = Input(shape=(image_dim,), name='image_input')
+        text_input = Input(shape=(text_dim,), name='text_input')
+
+        # Image processing branch
+        image_dense = Dense(1024, activation='relu')(image_input)
+        image_dropout = Dropout(0.3)(image_dense)
+        image_dense2 = Dense(512, activation='relu')(image_dropout)
+
+        # Text processing branch
+        text_dense = Dense(512, activation='relu')(text_input)
+        text_dropout = Dropout(0.3)(text_dense)
+        text_dense2 = Dense(256, activation='relu')(text_dropout)
+
+        # Combine both branches
+        combined = concatenate([image_dense2, text_dense2])
+        dense_combined = Dense(768, activation='relu')(combined)
+        dropout_combined = Dropout(0.3)(dense_combined)
+        output = Dense(2, activation='softmax', name='output')(dropout_combined)
+
+        self.model = Model(inputs=[image_input, text_input], outputs=output)
+
+    def preprocess_data(self, images, texts, is_test=0):
+        image_features = []
+        total_images = len(images)
+        
+        print("\nProcessing images:")
+        for i, image in enumerate(images, 1):
+            try:
+                print(f"Processing image {i}/{total_images}: {image}", end='\r')
+                temp = cv2.imread(path + image)
+                inputs = self.vit_processor(images=temp, return_tensors="pt").to(self.device)
+                with torch.no_grad():
+                    outputs = self.vit_model(**inputs)
+                features = outputs.logits.cpu().numpy().squeeze()
+                image_features.append(features)
+            except Exception as e:
+                print(f"\nError processing image {image}: {str(e)}")
+                image_features.append(np.zeros(1000))  # Handle errors by adding zero vectors
+        
+        print("\nProcessing texts:")
+        text_features = []
+        total_texts = len(texts)
+        for i, text in enumerate(texts, 1):
+            try:
+                print(f"Processing text {i}/{total_texts}", end='\r')
+                inputs = self.jina_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512).to(self.device)
+                
+                with torch.no_grad():
+                    outputs = self.jina_model(**inputs)
+                features = outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
+                text_features.append(features)
+            except Exception as e:
+                print(f"\nError processing text: {str(e)}")
+                text_features.append(np.zeros(768))  # Handle errors by adding zero vectors
+
+        print("\nPreprocessing completed!")
+        return np.array(image_features), np.array(text_features)
+
+
+    @staticmethod
+    @register_keras_serializable(package="Custom", name="f1_macro")
+    def f1_macro(y_true, y_pred):
+        """Custom F1 macro metric for Keras"""
+        y_true_class = tf.argmax(y_true, axis=1)
+        y_pred_class = tf.argmax(y_pred, axis=1)
+        
+        f1_scores = []
+        for i in range(2):  # Update this based on the number of classes
+            true_positives = tf.reduce_sum(tf.cast(
+                tf.logical_and(tf.equal(y_true_class, i), tf.equal(y_pred_class, i)),
+                tf.float32
+            ))
+            false_positives = tf.reduce_sum(tf.cast(
+                tf.logical_and(tf.not_equal(y_true_class, i), tf.equal(y_pred_class, i)),
+                tf.float32
+            ))
+            false_negatives = tf.reduce_sum(tf.cast(
+                tf.logical_and(tf.equal(y_true_class, i), tf.not_equal(y_pred_class, i)),
+                tf.float32
+            ))
+            
+            precision = true_positives / (true_positives + false_positives + tf.keras.backend.epsilon())
+            recall = true_positives / (true_positives + false_negatives + tf.keras.backend.epsilon())
+            f1 = 2 * precision * recall / (precision + recall + tf.keras.backend.epsilon())
+            f1_scores.append(f1)
+        
+        return tf.reduce_mean(f1_scores)
+
+
+    def learning_rate_schedule(self, epoch, lr):
+        """Learning rate scheduler function."""
+        if 5 <= epoch :
+            return lr * 0.5
+        elif 20 <= epoch < 21:
+            return lr * 0.01
+        elif 21 <= epoch :
+            return lr * 0.005
+        return lr
+
+    def train(self, x_train_images, x_train_texts, y_train):
+        print("Starting preprocessing...")
+        image_features, text_features = self.preprocess_data(x_train_images, x_train_texts)
+
+        print(f"Image feature shape: {image_features.shape}")
+        print(f"Text feature shape: {text_features.shape}")
+        
+        # Convert labels to numerical format for stratification
+        numerical_labels = [self.label_mapping[label] for label in y_train]
+        
+        # Perform stratified split
+        sss = StratifiedShuffleSplit(n_splits=1, test_size=0.3, random_state=42)
+        train_idx, val_idx = next(sss.split(image_features, numerical_labels))
+        
+        # Split the data
+        train_image_features = image_features[train_idx]
+        train_text_features = text_features[train_idx]
+        val_image_features = image_features[val_idx]
+        val_text_features = text_features[val_idx]
+        
+        # Encode labels after splitting
+        y_train = np.array(y_train)  
+        y_train_encoded = self.encode_labels(y_train[train_idx])
+        y_val_encoded = self.encode_labels(y_train[val_idx])
+        
+        initial_lr = 1e-4
+
+        print("\nCompiling model...")
+        self.model.compile(
+            optimizer=tf.keras.optimizers.AdamW(learning_rate=initial_lr),
+            loss='categorical_crossentropy',
+            metrics=[tf.keras.metrics.AUC(), CombinedSarcasmClassifier.f1_macro]
+        )
+        
+        class BatchProgressCallback(tf.keras.callbacks.Callback):
+            def on_epoch_begin(self, epoch, logs=None):
+                print(f"\nEpoch {epoch + 1} starting...")
+            
+            def on_batch_begin(self, batch, logs=None):
+                print(f"Training batch {batch + 1}", end='\r')
+
+        lr_scheduler = LearningRateScheduler(self.learning_rate_schedule)
+
+        print("\nStarting training...")
+        history = self.model.fit(
+            [train_image_features, train_text_features],
+            y_train_encoded,
+            epochs=25,
+            batch_size=16,
+            validation_data=([val_image_features, val_text_features], y_val_encoded),
+            callbacks=[BatchProgressCallback(), lr_scheduler]
+        )
+        
+        print("\nTraining completed!")
+        return history
+
+    def predict(self, x_test_images, x_test_texts):
+        print("Preprocessing test data...")
+        image_features, text_features = self.preprocess_data(x_test_images, x_test_texts, 1)
+        print("Making predictions...")
+        predictions = self.model.predict([image_features, text_features])
+        return self.decode_labels(predictions)
+
+    def load(self, model_file):
+        self.model = load_model(model_file, custom_objects={'f1_macro': self.f1_macro})
+
+    def save(self, model_file):
+        self.model.save(model_file)
+
+    def summary(self):
+        self.model.summary()
+#-----------------------------------------------------------------------------------------------------
+classifier = CombinedSarcasmClassifier()
+classifier.build()
+classifier.load('model.keras')
 
 # Initialize session state variables if not already present
 if 'pending_posts' not in st.session_state:
@@ -109,13 +326,21 @@ def encode_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-def show_post(post, index=None):
+def show_post(post, index=None, prediction=None):
     # Handle image source
     if post['image'].startswith('http'):  # Online URL
         img_src = post['image']
     else:  # Local file path
         encoded_image = encode_image(post['image'])
         img_src = f"data:image/png;base64,{encoded_image}"
+
+    # Xác định màu và nhãn cho dự đoán
+    if prediction == 0:
+        prediction_label = '<span style="color: green; font-weight: bold;">Not Sarcasm</span>'
+    elif prediction == 1:
+        prediction_label = '<span style="color: red; font-weight: bold;">Sarcasm</span>'
+    else:
+        prediction_label = ''  # Không hiển thị nếu prediction là None
 
     # Container for the post layout
     with st.container():
@@ -131,9 +356,10 @@ def show_post(post, index=None):
                 box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
             ">
 
-            <!-- Timestamp -->
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
+            <!-- Timestamp và Prediction trên cùng một hàng -->
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                 <span style="font-size: 15px; color: gray;">Posted at {format_timestamp(post['timestamp'])}</span>
+                {prediction_label}
             </div>
             
             <!-- Caption -->
@@ -158,6 +384,7 @@ def show_post(post, index=None):
         with col2:
             if st.button("✖", key=f"decline_{index}", help="Decline post"):
                 decline_post(index)
+
 def display_post(post):
     # Handle image source
     if post['image'].startswith('http'):  # Online URL
@@ -232,5 +459,6 @@ elif page == 'Review Posts':
     else:
         # Display pending posts with approve buttons
         for i, post in enumerate(st.session_state.pending_posts):
-            show_post(post, index=i)
+            prediction = classifier.predict(post['image'], post['text'])
+            show_post(post, index=i, prediction=prediction)
             st.markdown("---")
