@@ -151,14 +151,13 @@ def show_post(post, index=None):
             unsafe_allow_html=True
         )
         # Buttons in container
-        if index is not None:
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("Approve", key=f"approve_{index}"):
-                    approve_post(index)
-            with col2:
-                if st.button("Decline", key=f"decline_{index}"):
-                    decline_post(index)
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("✔", key=f"approve_{index}", help="Approve post"):
+                approve_post(index)
+        with col2:
+            if st.button("✖", key=f"decline_{index}", help="Decline post"):
+                decline_post(index)
 def display_post(post):
     # Handle image source
     if post['image'].startswith('http'):  # Online URL
