@@ -116,12 +116,13 @@ if page == 'Main Posts':
                 "timestamp": str(datetime.now())
             }
             add_post(post)
-            st.write(post)
+            st.write(pending_posts)
             st.success("Your post has been submitted for review!")
         else:
             st.error("Please upload an image and write text.")
             
 elif page == 'Review Posts':
+    st.write(pending_posts)
     if len(pending_posts) == 0:
         st.write("No pending posts.")
     else:
