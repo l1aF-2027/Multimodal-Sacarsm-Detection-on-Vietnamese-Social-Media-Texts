@@ -115,10 +115,7 @@ def show_post(post):
                 box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
             ">
             
-                <!-- Image -->
-                <div style="text-align: center;">
-                    <img src="{post['image']}">
-                </div>
+
                 
                 <!-- Caption -->
                 <div style="margin-bottom: 15px;">
