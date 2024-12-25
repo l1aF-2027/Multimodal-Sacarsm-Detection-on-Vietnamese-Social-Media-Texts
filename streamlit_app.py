@@ -39,7 +39,6 @@ st.markdown("""
 st.markdown("""
     <div class="menu-title">
         <h1>
-            <img src="https://cdn-icons-png.flaticon.com/512/732/732200.png" width="30" style="vertical-align: middle; margin-right: 10px;">
             AI002
         </h1>
     </div>
