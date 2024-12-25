@@ -100,7 +100,7 @@ class CombinedSarcasmClassifier:
         self.jina_model = AutoModel.from_pretrained("jinaai/jina-embeddings-v3", 
                                                    trust_remote_code=True,
                                                    torch_dtype=torch.float32)
-        self.device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         # Define label mapping
         self.label_mapping = {
@@ -311,9 +311,14 @@ class CombinedSarcasmClassifier:
     def summary(self):
         self.model.summary()
 #-----------------------------------------------------------------------------------------------------
-classifier = CombinedSarcasmClassifier()
-classifier.build()
-classifier.load('model.keras')
+@st.experimental_singleton
+def load_combined_sarcasm_classifier():
+    classifier = CombinedSarcasmClassifier()
+    classifier.build()
+    classifier.load('model.keras')
+    return classifier
+
+classifier = load_combined_sarcasm_classifier()
 
 # Initialize session state variables if not already present
 if 'pending_posts' not in st.session_state:
