@@ -6,3 +6,4 @@ transformers
 keras
 torch
 opencv-python-headless
+scikit-learn
