@@ -2,7 +2,6 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 import os
 from datetime import datetime
-import json
 
 #-----------------------------------------------------------------------------------------------------
 st.set_page_config(
@@ -11,7 +10,7 @@ st.set_page_config(
 )
 
 # Custom CSS for styling
-st.markdown("""
+st.markdown(""" 
     <style>
     .css-1y4p8pa {
         padding-top: 0;
@@ -51,7 +50,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Custom title with banner image and group name
-st.markdown("""
+st.markdown(""" 
     <div class="banner-container">
         <img class="banner-image" src="https://scontent.fsgn5-10.fna.fbcdn.net/v/t39.30808-6/343567058_5683586315079218_583712912555665595_n.png?_nc_cat=110&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=khKFog7hPmoQ7kNvgHLKP40&_nc_zt=23&_nc_ht=scontent.fsgn5-10.fna&_nc_gid=AjVYUgFwYLBQPMso_7Cvefs&oh=00_AYARFFGGZ_XRkK93IJLRNrAkKdnBPE3qsewVZ9x3GLRwlw&oe=6771C2A6">
         <div class="group-name">Nhóm 5 - Tư duy Trí tuệ nhân tạo - AI002.P11</div>
@@ -79,37 +78,18 @@ page = option_menu(
     }
 )
 
-# ----------------------------------------------------------------------------------------------------
-
-PENDING_FILE = 'pending_posts.json'
-APPROVED_FILE = 'approved_posts.json'
-
-def load_posts(file_path):
-    with open(file_path, 'r') as f:
-        return json.load(f)
-
-# Save data to file
-def save_posts(file_path, posts):
-    with open(file_path, 'w') as f:
-        json.dump(posts, f, indent=4)
+# In-memory data structures for posts
+pending_posts = []
+approved_posts = []
 
 # Add a new post
-def add_post(post, file_path):
-    posts = load_posts(file_path)
-    posts.append(post)
-    save_posts(file_path, posts)
+def add_post(post):
+    pending_posts.append(post)
 
 # Approve a post
 def approve_post(index):
-    pending_posts = load_posts(PENDING_FILE)
-    approved_posts = load_posts(APPROVED_FILE)
-
     # Move the post to approved
     approved_posts.append(pending_posts.pop(index))
-    
-    # Save changes
-    save_posts(PENDING_FILE, pending_posts)
-    save_posts(APPROVED_FILE, approved_posts)
 
 # Display a single post
 def display_post(post):
@@ -135,17 +115,15 @@ if page == 'Main Posts':
                 "text": text,
                 "timestamp": str(datetime.now())
             }
-            add_post(post, PENDING_FILE)
+            add_post(post)
             st.success("Your post has been submitted for review!")
         else:
             st.error("Please upload an image and write text.")
             
 elif page == 'Review Posts':
-    if len(load_posts(PENDING_FILE)) == 0:
+    if len(pending_posts) == 0:
         st.write("No pending posts.")
     else:
-        pending_posts = load_posts(PENDING_FILE)
-
         # Display pending posts with approve buttons
         for i, post in enumerate(pending_posts):
             display_post(post)
