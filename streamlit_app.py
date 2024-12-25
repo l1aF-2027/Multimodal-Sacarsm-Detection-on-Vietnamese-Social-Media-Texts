@@ -100,7 +100,7 @@ def format_timestamp(timestamp):
     dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')  # Parse string to datetime
     return dt.strftime('%H:%M, %d/%m/%Y')  # Format as Hour:Minute, Day/Month/Year
 
-def show_post(post, index):
+def show_post(post):
     # Container for the post layout
     with st.container():
         # Add a styled div container for the post
