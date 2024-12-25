@@ -4,3 +4,4 @@ tensorflow
 einops
 transformers
 keras
+torch
