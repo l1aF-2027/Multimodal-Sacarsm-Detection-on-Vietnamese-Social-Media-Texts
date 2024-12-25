@@ -12,6 +12,7 @@ import torch
 from transformers import AutoImageProcessor, AutoModelForImageClassification, AutoTokenizer, AutoModel, AutoModelForMaskedLM
 import numpy as np
 import cv2
+import gc
 from tensorflow.keras.callbacks import LearningRateScheduler
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import train_test_split
@@ -311,6 +312,7 @@ class CombinedSarcasmClassifier:
     def summary(self):
         self.model.summary()
 #-----------------------------------------------------------------------------------------------------
+gc.collect()
 @st.cache_resource(ttl=3600)  
 def load_combined_sarcasm_classifier():
     classifier = CombinedSarcasmClassifier()
