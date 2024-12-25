@@ -110,9 +110,6 @@ def encode_image_to_base64(image_path):
 
 def show_post(post):
     # Container for the post layout
-    with st.container():
-        # Encode image to Base64
-        encoded_image = encode_image_to_base64(post['image'])
 
         # Add a styled div container for the post
         st.markdown(
@@ -132,12 +129,12 @@ def show_post(post):
 
                 <!-- Caption -->
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
-                    <p style="font-size: 16px; font-weight: bold; margin: 0;">{post['text']}</p>
+                    <div style="font-size: 16px; font-weight: bold; margin: 0;" class="caption">{post['text']}</div>
                 </div>
 
                 <!-- Image -->
                 <div style="text-align: center;">
-                    <img src="data:image/jpeg;base64,{encoded_image}" style="max-width: 100%; border-radius: 10px;"/>
+                    <img class="post-image" src={post['image']}>
                 </div>
             </div>
             """, 
