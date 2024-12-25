@@ -1,144 +1,27 @@
 import streamlit as st
-import os
-import json
-from datetime import datetime
 
-st.set_page_config(
-    page_title="Facebook Group Simulation",
-    page_icon=":speech_balloon:",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Custom CSS for the sidebar
-st.markdown("""
-    <style>
-    [data-testid="stSidebar"] {
-        background-color: #f8f9fa;
-        padding-top: 2rem;
-        max-width: 20rem !important;
-    }
-    
-    [data-testid="stSidebarNav"] {
-        background-color: transparent;
-    }
-    
-    .css-1d391kg {
-        padding-top: 2rem;
-    }
-    
-    .sidebar-content {
-        padding: 1rem;
-    }
-    
-    .sidebar-title {
-        color: #666;
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# File paths for storing data
-PENDING_FILE = 'pending_posts.json'
-APPROVED_FILE = 'approved_posts.json'
-
-# Initialize files if they don't exist
-def init_file(file_path):
-    if not os.path.exists(file_path):
-        with open(file_path, 'w') as f:
-            json.dump([], f)
-
-init_file(PENDING_FILE)
-init_file(APPROVED_FILE)
-
-# Load data from file
-def load_posts(file_path):
-    with open(file_path, 'r') as f:
-        return json.load(f)
-
-# Save data to file
-def save_posts(file_path, posts):
-    with open(file_path, 'w') as f:
-        json.dump(posts, f, indent=4)
-
-# Add a new post
-def add_post(post, file_path):
-    posts = load_posts(file_path)
-    posts.append(post)
-    save_posts(file_path, posts)
-
-# Approve a post
-def approve_post(index):
-    pending_posts = load_posts(PENDING_FILE)
-    approved_posts = load_posts(APPROVED_FILE)
-    approved_posts.append(pending_posts.pop(index))
-    save_posts(PENDING_FILE, pending_posts)
-    save_posts(APPROVED_FILE, approved_posts)
-
-# Display a single post
-def display_post(post):
-    st.image(post['image'], width=300)
-    st.write(post['caption'])
-    st.caption(f"Posted on: {post['timestamp']}")
-
-# Main function
 def main():
+    # Thiết lập tiêu đề cho trang web
+    st.title("Website Demo với Radio Button")
 
-
-    # Custom sidebar
+    # Tạo sidebar với radio button
     with st.sidebar:
-        st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
-        st.markdown('<p class="sidebar-title">streamlit app</p>', unsafe_allow_html=True)
-        st.markdown('<p class="sidebar-title">draw support</p>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.header("Menu Lựa Chọn")
         
-        # Navigation
-        page = st.radio("", ["Group Page", "Review Posts"], label_visibility="collapsed")
+        # Tạo radio button với hai lựa chọn
+        selected_option = st.radio(
+            "Chọn một mục:",
+            ["Mục 1", "Mục 2"]
+        )
 
-    if page == "Group Page":
-        st.header("Approved Posts")
-        approved_posts = load_posts(APPROVED_FILE)
-
-        # Display approved posts
-        for post in approved_posts:
-            display_post(post)
-            st.markdown("---")
-
-        # Form to create a new post
-        st.subheader("Create a New Post")
-        image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-        text = st.text_area("Post text")
-        if st.button("Submit"):
-            if image and text:
-                # Save the uploaded image
-                image_path = os.path.join('uploads', image.name)
-                os.makedirs('uploads', exist_ok=True)
-                with open(image_path, "wb") as f:
-                    f.write(image.getbuffer())
-
-                # Create post
-                post = {
-                    "image": image_path,
-                    "text": text,
-                    "timestamp": str(datetime.now())
-                }
-                add_post(post, PENDING_FILE)
-                st.success("Your post has been submitted for review!")
-            else:
-                st.error("Please upload an image and write text.")
-
-    elif page == "Review Posts":
-        st.header("Pending Posts")
-        pending_posts = load_posts(PENDING_FILE)
-
-        # Display pending posts with approve buttons
-        for i, post in enumerate(pending_posts):
-            display_post(post)
-            if st.button(f"Approve Post {i+1}", key=i):
-                approve_post(i)
-                st.experimental_rerun()
-            st.markdown("---")
+    # Hiển thị nội dung tương ứng với lựa chọn
+    if selected_option == "Mục 1":
+        st.header("Nội dung Mục 1")
+        st.write("Đây là nội dung của mục 1")
+        
+    else:
+        st.header("Nội dung Mục 2")
+        st.write("Đây là nội dung của mục 2")
 
 if __name__ == "__main__":
     main()
