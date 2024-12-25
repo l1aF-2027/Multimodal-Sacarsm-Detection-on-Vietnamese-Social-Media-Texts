@@ -100,25 +100,38 @@ def format_timestamp(timestamp):
     dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')  # Parse string to datetime
     return dt.strftime('%H:%M, %d/%m/%Y')  # Format as Hour:Minute, Day/Month/Year
 
-def show_post(post):
+def show_post(post, index):
     # Container for the post layout
     with st.container():
-        # Display formatted date and time in the top-right corner
-        formatted_timestamp = format_timestamp(post['timestamp'])
+        # Add a styled div container for the post
         st.markdown(
             f"""
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
-                <span style="font-size: 12px; color: black;">{formatted_timestamp}</span>
+            <div style="
+                background-color: #ffffff; 
+                border: 1px solid #d3d3d3; 
+                border-radius: 15px; 
+                padding: 20px; 
+                margin-bottom: 20px;
+                box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            ">
+                <!-- Timestamp -->
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
+                    <span style="font-size: 15px; color: gray;">Posted at {format_timestamp(post['timestamp'])}</span>
+                </div>
+
+                <!-- Caption -->
+                <div style="margin-bottom: 15px;">
+                    <p style="font-size: 16px; font-weight: bold; margin: 0;">{post['text']}</p>
+                </div>
+
+                <!-- Image -->
+                <div style="text-align: center;">
+                    <img src="data:image/jpeg;base64,{post['image']}" style="max-width: 100%; border-radius: 10px;"/>
+                </div>
             </div>
             """, 
             unsafe_allow_html=True
         )
-
-        # Display caption below the timestamp
-        st.markdown(f"**{post['text']}**")
-
-        # Display image
-        st.image(post['image'])
 
 
 if page == 'Main Posts':
@@ -152,7 +165,7 @@ elif page == 'Review Posts':
         # Display pending posts with approve buttons
         for i, post in enumerate(st.session_state.pending_posts):
             show_post(post)
-            if st.button(f"Approve Post {i+1}", key=i):
+            if st.button(f"Approve", key=i):
                 approve_post(i)
                 st.experimental_rerun()
             st.markdown("---")
