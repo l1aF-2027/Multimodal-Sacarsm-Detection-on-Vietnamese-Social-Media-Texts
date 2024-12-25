@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_option_menu import option_menu
 import os
 import json
 from datetime import datetime
@@ -47,7 +48,7 @@ def approve_post(index):
 # Display a single post
 def display_post(post):
     st.image(post['image'], width=300)
-    st.write(post['text'])
+    st.write(post['caption'])
     st.caption(f"Posted on: {post['timestamp']}")
 
 # Main function
@@ -57,7 +58,9 @@ def main():
     st.sidebar.write("draw support")
 
     # Sidebar navigation
-    page = st.sidebar.radio("Navigation", ["Group Page", "Review Posts"])
+    page = None
+    with st.sidebar:
+        page = option_menu("Navigation", ["Group Page", "Review Posts"])
 
     if page == "Group Page":
         st.header("Approved Posts")
