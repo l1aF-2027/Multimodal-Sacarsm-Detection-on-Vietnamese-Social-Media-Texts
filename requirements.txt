@@ -5,4 +5,4 @@ einops
 transformers
 keras
 torch
-opencv-python
+opencv-python-headless

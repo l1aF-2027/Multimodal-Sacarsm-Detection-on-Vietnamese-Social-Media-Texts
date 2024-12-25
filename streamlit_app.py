@@ -152,7 +152,7 @@ class CombinedSarcasmClassifier:
         for i, image in enumerate(images, 1):
             try:
                 print(f"Processing image {i}/{total_images}: {image}", end='\r')
-                temp = cv2.imread(path + image)
+                temp = cv2.imread(image)
                 inputs = self.vit_processor(images=temp, return_tensors="pt").to(self.device)
                 with torch.no_grad():
                     outputs = self.vit_model(**inputs)
