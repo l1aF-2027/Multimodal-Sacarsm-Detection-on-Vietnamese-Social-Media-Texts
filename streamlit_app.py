@@ -124,16 +124,14 @@ def show_post(post):
             <div style="margin-bottom: 15px;">
                 <p style="font-size: 16px; font-weight: bold; margin: 0;">{post['text']}</p>
             </div>
-            
-            <!-- Image -->
-            <div style="text-align: center;">
-                <img src="{post['image']}" "/>
-            </div>
-            
             </div>
             """, 
             unsafe_allow_html=True
         )
+        
+        # Display image using Streamlit's st.image()
+        st.image(post['image'], use_column_width=True)
+
 
 
 if page == 'Main Posts':
