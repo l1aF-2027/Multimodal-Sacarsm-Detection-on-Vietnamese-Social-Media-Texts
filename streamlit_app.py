@@ -64,47 +64,47 @@ def main():
 
     if page == "Group Page":
         st.header("Approved Posts")
-        approved_posts = load_posts(APPROVED_FILE)
+        # approved_posts = load_posts(APPROVED_FILE)
 
-        # Display approved posts
-        for post in approved_posts:
-            display_post(post)
-            st.markdown("---")
+        # # Display approved posts
+        # for post in approved_posts:
+        #     display_post(post)
+        #     st.markdown("---")
 
-        # Form to create a new post
-        st.subheader("Create a New Post")
-        image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-        text = st.text_area("Post text")
-        if st.button("Submit"):
-            if image and text:
-                # Save the uploaded image
-                image_path = os.path.join('uploads', image.name)
-                os.makedirs('uploads', exist_ok=True)
-                with open(image_path, "wb") as f:
-                    f.write(image.getbuffer())
+        # # Form to create a new post
+        # st.subheader("Create a New Post")
+        # image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+        # text = st.text_area("Post text")
+        # if st.button("Submit"):
+        #     if image and text:
+        #         # Save the uploaded image
+        #         image_path = os.path.join('uploads', image.name)
+        #         os.makedirs('uploads', exist_ok=True)
+        #         with open(image_path, "wb") as f:
+        #             f.write(image.getbuffer())
 
-                # Create post
-                post = {
-                    "image": image_path,
-                    "text": text,
-                    "timestamp": str(datetime.now())
-                }
-                add_post(post, PENDING_FILE)
-                st.success("Your post has been submitted for review!")
-            else:
-                st.error("Please upload an image and write text.")
+        #         # Create post
+        #         post = {
+        #             "image": image_path,
+        #             "text": text,
+        #             "timestamp": str(datetime.now())
+        #         }
+        #         add_post(post, PENDING_FILE)
+        #         st.success("Your post has been submitted for review!")
+        #     else:
+        #         st.error("Please upload an image and write text.")
 
     elif page == "Review Posts":
         st.header("Pending Posts")
-        pending_posts = load_posts(PENDING_FILE)
+        # pending_posts = load_posts(PENDING_FILE)
 
-        # Display pending posts with approve buttons
-        for i, post in enumerate(pending_posts):
-            display_post(post)
-            if st.button(f"Approve Post {i+1}", key=i):
-                approve_post(i)
-                st.experimental_rerun()
-            st.markdown("---")
+        # # Display pending posts with approve buttons
+        # for i, post in enumerate(pending_posts):
+        #     display_post(post)
+        #     if st.button(f"Approve Post {i+1}", key=i):
+        #         approve_post(i)
+        #         st.experimental_rerun()
+        #     st.markdown("---")
 
 if __name__ == "__main__":
     main()
