@@ -102,12 +102,7 @@ def display_post(post):
     st.caption(f"Posted on: {post['timestamp']}")
 
 if page == 'Main Posts':
-    col1, col2 = st.columns([0.2, 20])  # Adjust the ratio to control width
-
-    # Avatar in the first column
-    avatar_path = "image.png"  # Path to your avatar image
-    col1.image(avatar_path, width=20) 
-    text = col2.text_input(label = "Post text", placeholder="Write something here...", label_visibility="hidden")
+    text = st.text_input(label = "Post text", placeholder="Write something here...", label_visibility="hidden")
     if text:
         image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
         if image:
