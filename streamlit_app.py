@@ -100,45 +100,43 @@ def format_timestamp(timestamp):
     dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')  # Parse string to datetime
     return dt.strftime('%H:%M, %d/%m/%Y')  # Format as Hour:Minute, Day/Month/Year
 
-import base64
+def show_post(post, index):
+    # Container for the post layout
+    with st.container():
+        # Add a styled div container for the post
+        st.markdown(
+            f"""
+            <div style="
+                background-color: #ffffff; 
+                border: 1px solid #d3d3d3; 
+                border-radius: 15px; 
+                padding: 20px; 
+                margin-bottom: 20px;
+                box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            ">
+                <!-- Caption -->
+                <div style="margin-bottom: 15px;">
+                    <p style="font-size: 16px; font-weight: bold; margin: 0;">{post['text']}</p>
+                </div>
+                
+                <!-- Image -->
+                <div style="text-align: center;">
+                    <img src="data:image/jpeg;base64,{post['image']}" style="max-width: 100%; border-radius: 10px;"/>
+                </div>
+                
+                <!-- Timestamp -->
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
+                    <span style="font-size: 15px; color: gray;">Posted at {format_timestamp(post['timestamp'])}</span>
+                </div>
 
-def encode_image_to_base64(image_path):
-    # Đọc ảnh và encode thành base64
-    with open(image_path, "rb") as f:
-        encoded_string = base64.b64encode(f.read()).decode('utf-8')
-    return encoded_string
+                
 
-def show_post(post):
-
-    st.markdown(
-        f"""
-        <div style="
-            background-color: #ffffff; 
-            border: 1px solid #d3d3d3; 
-            border-radius: 15px; 
-            padding: 20px; 
-            margin-bottom: 20px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-        ">
-            <!-- Caption -->
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
-                <div style="font-size: 16px; font-weight: bold; margin: 0;" class="caption">{post['text']}</div>
+                
             </div>
-            <!-- Timestamp -->
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
-                <span style="font-size: 15px; color: gray;">Posted at {format_timestamp(post['timestamp'])}</span>
-            </div>
+            """, 
+            unsafe_allow_html=True
+        )
 
-            
-
-            <!-- Image -->
-            <div style="text-align: center;">
-                <img class="post-image" src="{post['image']}">
-            </div>
-        </div>
-        """, 
-        unsafe_allow_html=True
-    )
 
 if page == 'Main Posts':
     text = st.text_input(label = "Post text", placeholder="Write something here...", label_visibility="hidden")
@@ -171,7 +169,7 @@ elif page == 'Review Posts':
         # Display pending posts with approve buttons
         for i, post in enumerate(st.session_state.pending_posts):
             show_post(post)
-            if st.button(f"Approve", key=i):
+            if st.button(f"Approve Post {i+1}", key=i):
                 approve_post(i)
                 st.experimental_rerun()
             st.markdown("---")
