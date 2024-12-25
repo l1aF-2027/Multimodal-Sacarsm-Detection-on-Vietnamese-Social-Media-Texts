@@ -131,7 +131,7 @@ def show_post(post):
                 </div>
 
                 <!-- Caption -->
-                <div sstyle="display: flex; justify-content: flex-end; margin-bottom: 5px;">
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
                     <p style="font-size: 16px; font-weight: bold; margin: 0;">{post['text']}</p>
                 </div>
 
