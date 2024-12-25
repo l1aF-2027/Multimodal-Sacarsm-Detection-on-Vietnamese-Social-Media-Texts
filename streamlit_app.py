@@ -116,6 +116,7 @@ if page == 'Main Posts':
                 "timestamp": str(datetime.now())
             }
             add_post(post)
+            print(post)
             st.success("Your post has been submitted for review!")
         else:
             st.error("Please upload an image and write text.")
