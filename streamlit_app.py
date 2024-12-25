@@ -3,6 +3,13 @@ import os
 import json
 from datetime import datetime
 
+st.set_page_config(
+    page_title="Facebook Group Simulation",
+    page_icon=":speech_balloon:",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # Custom CSS for the sidebar
 st.markdown("""
     <style>
@@ -77,12 +84,7 @@ def display_post(post):
 
 # Main function
 def main():
-    st.set_page_config(
-        page_title="Facebook Group Simulation",
-        page_icon=":speech_balloon:",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
+
 
     # Custom sidebar
     with st.sidebar:
