@@ -355,11 +355,11 @@ def show_post(post, index=None, prediction=None):
     else:  # Local file path
         encoded_image = encode_image(post['image'])
         img_src = f"data:image/png;base64,{encoded_image}"
-
+    print(prediction)
     # Xác định màu và nhãn cho dự đoán
-    if prediction == 0:
+    if prediction == ['not-sarcasm']:
         prediction_label = '<span style="color: green; font-weight: bold;">Not Sarcasm</span>'
-    elif prediction == 1:
+    elif prediction == ['sarcasm']:
         prediction_label = '<span style="color: red; font-weight: bold;">Sarcasm</span>'
     else:
         prediction_label = ''  # Không hiển thị nếu prediction là None
