@@ -52,7 +52,9 @@ def display_post(post):
 
 # Main function
 def main():
-    st.title("Facebook Group Simulation")
+    st.set_page_config(page_title="Facebook Group Simulation", page_icon=":speech_balloon:", layout="wide")
+    st.sidebar.title("streamlit app")
+    st.sidebar.write("draw support")
 
     # Sidebar navigation
     page = st.sidebar.radio("Navigation", ["Group Page", "Review Posts"])
