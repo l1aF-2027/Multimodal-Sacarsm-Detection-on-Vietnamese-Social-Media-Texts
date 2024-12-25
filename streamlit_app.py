@@ -101,7 +101,7 @@ class CombinedSarcasmClassifier:
         self.jina_model = AutoModel.from_pretrained("jinaai/jina-embeddings-v3", 
                                                    trust_remote_code=True,
                                                    torch_dtype=torch.float32)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
         
         # Define label mapping
         self.label_mapping = {
