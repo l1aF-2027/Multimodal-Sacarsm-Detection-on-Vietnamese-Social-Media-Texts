@@ -2,6 +2,7 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 import os
 from datetime import datetime
+import base64
 
 #-----------------------------------------------------------------------------------------------------
 st.set_page_config(
@@ -95,16 +96,20 @@ def approve_post(index):
     # Move the post to approved
     st.session_state.approved_posts.append(st.session_state.pending_posts.pop(index))
 
+# Decline a post
+def decline_post(index):
+    st.session_state.pending_posts.pop(index)
+
 def format_timestamp(timestamp):
     # Định dạng timestamp từ datetime string sang "Giờ:Phút, Ngày/Tháng/Năm"
     dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')  # Parse string to datetime
     return dt.strftime('%H:%M, %d/%m/%Y')  # Format as Hour:Minute, Day/Month/Year
-import base64
+
 def encode_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-def show_post(post):
+def show_post(post, index=None):
     # Handle image source
     if post['image'].startswith('http'):  # Online URL
         img_src = post['image']
@@ -145,8 +150,57 @@ def show_post(post):
             """, 
             unsafe_allow_html=True
         )
+        # Buttons in container
+        if index is not None:
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Approve", key=f"approve_{index}"):
+                    approve_post(index)
+            with col2:
+                if st.button("Decline", key=f"decline_{index}"):
+                    decline_post(index)
+def display_post(post):
+    # Handle image source
+    if post['image'].startswith('http'):  # Online URL
+        img_src = post['image']
+    else:  # Local file path
+        encoded_image = encode_image(post['image'])
+        img_src = f"data:image/png;base64,{encoded_image}"
 
+    # Container for the post layout
+    with st.container():
+        # Styled HTML post
+        st.markdown(
+            f"""
+            <div style="
+                background-color: #ffffff; 
+                border: 1px solid #d3d3d3; 
+                border-radius: 15px; 
+                padding: 20px; 
+                margin-bottom: 20px;
+                box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            ">
 
+            <!-- Timestamp -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
+                <span style="font-size: 15px; color: gray;">Posted at {format_timestamp(post['timestamp'])}</span>
+            </div>
+            
+            <!-- Caption -->
+            <div style="margin-bottom: 15px;">
+                <p style="font-size: 16px; font-weight: bold; margin: 0;">{post['text']}</p>
+            </div>
+            
+            <!-- Image -->
+            <div style="text-align: center;">
+                <img src="{img_src}" style="max-width: 100%; border-radius: 10px;">
+            </div>
+            
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+        
 if page == 'Main Posts':
     text = st.text_input(label = "Post text", placeholder="Write something here...", label_visibility="hidden")
     if text:
@@ -170,15 +224,14 @@ if page == 'Main Posts':
                     st.success("Your post has been submitted for review!")
                 else:
                     st.error("Please upload an image and write text.")
-            
+    if (len(st.session_state.approved_posts) > 0):
+        for post in st.session_state.approved_posts:
+            display_post(post)        
 elif page == 'Review Posts':
     if len(st.session_state.pending_posts) == 0:
         st.title("No pending posts.")
     else:
         # Display pending posts with approve buttons
         for i, post in enumerate(st.session_state.pending_posts):
-            show_post(post)
-            if st.button(f"Approve Post {i+1}", key=i):
-                approve_post(i)
-                st.experimental_rerun()
+            show_post(post, index=i)
             st.markdown("---")
