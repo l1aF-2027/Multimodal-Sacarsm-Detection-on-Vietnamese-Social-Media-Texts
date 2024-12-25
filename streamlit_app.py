@@ -2,16 +2,17 @@ import streamlit as st
 
 def main():
     # Thiết lập tiêu đề cho trang web
-    st.title("Website Demo với Radio Button")
+    st.title("Website Demo với Menu Chọn")
 
-    # Tạo sidebar với radio button
+    # Tạo sidebar với selectbox
     with st.sidebar:
         st.header("Menu Lựa Chọn")
         
-        # Tạo radio button với hai lựa chọn
-        selected_option = st.radio(
+        # Tạo selectbox không có ô tick
+        selected_option = st.selectbox(
             "Chọn một mục:",
-            ["Mục 1", "Mục 2"]
+            ["Mục 1", "Mục 2"],
+            label_visibility="hidden"  # Ẩn label của selectbox
         )
 
     # Hiển thị nội dung tương ứng với lựa chọn
