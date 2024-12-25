@@ -311,7 +311,7 @@ class CombinedSarcasmClassifier:
     def summary(self):
         self.model.summary()
 #-----------------------------------------------------------------------------------------------------
-@st.cache_resource
+@st.cache_resource(ttl=3600)  
 def load_combined_sarcasm_classifier():
     classifier = CombinedSarcasmClassifier()
     classifier.build()
@@ -320,24 +320,65 @@ def load_combined_sarcasm_classifier():
 
 classifier = load_combined_sarcasm_classifier()
 
+def load_predictions():
+    try:
+        with open('predictions.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+def save_prediction(image_path, text, prediction):
+    predictions = load_predictions()
+    predictions[f"{image_path}_{text}"] = prediction
+    with open('predictions.json', 'w', encoding='utf-8') as f:
+        json.dump(predictions, f, ensure_ascii=False)
+
+def get_cached_prediction(image_path, text):
+    predictions = load_predictions()
+    return predictions.get(f"{image_path}_{text}")
+def load_posts(filename):
+    try:
+        with open(filename, 'r', encoding='utf-8') as f:
+            content = f.read()
+            return json.loads(content) if content else []
+    except (FileNotFoundError, json.JSONDecodeError):
+        # Create the file if it doesn't exist
+        save_posts([], filename)
+        return []
+
 # Initialize session state variables if not already present
+
+
+# Initialize session state variables
 if 'pending_posts' not in st.session_state:
     st.session_state.pending_posts = []
 if 'approved_posts' not in st.session_state:
     st.session_state.approved_posts = []
 
-# Add a new post
+# Load existing posts
+st.session_state.pending_posts = load_posts('pending_posts.json')
+st.session_state.approved_posts = load_posts('approved_posts.json')
+
+def save_posts(posts, filename):
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(posts, f, ensure_ascii=False)
+
 def add_post(post):
     st.session_state.pending_posts.append(post)
+    save_posts(st.session_state.pending_posts, 'pending_posts.json')
 
-# Approve a post
+# Modify approve_post function:
 def approve_post(index):
-    # Move the post to approved
-    st.session_state.approved_posts.append(st.session_state.pending_posts.pop(index))
+    post = st.session_state.pending_posts.pop(index)
+    st.session_state.approved_posts.append(post)
+    save_posts(st.session_state.pending_posts, 'pending_posts.json')
+    save_posts(st.session_state.approved_posts, 'approved_posts.json')
 
-# Decline a post
+# Modify decline_post function:
 def decline_post(index):
     st.session_state.pending_posts.pop(index)
+    save_posts(st.session_state.pending_posts, 'pending_posts.json')
+
 
 def format_timestamp(timestamp):
     # Định dạng timestamp từ datetime string sang "Giờ:Phút, Ngày/Tháng/Năm"
@@ -474,13 +515,24 @@ if page == 'Main Posts':
                     st.error("Please upload an image and write text.")
     if (len(st.session_state.approved_posts) > 0):
         for post in st.session_state.approved_posts:
-            display_post(post)        
+            display_post(post)       
+ 
 elif page == 'Review Posts':
     if len(st.session_state.pending_posts) == 0:
-        st.title("No pending posts.")
+        st.markdown(
+        """
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+            <h1>No pending posts.</h1>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     else:
         # Display pending posts with approve buttons
         for i, post in enumerate(st.session_state.pending_posts):
-            prediction = classifier.predict(post['image'], post['text'])
+            prediction = get_cached_prediction(post['image'], post['text'])
+            if prediction is None:
+                prediction = classifier.predict(post['image'], post['text'])
+                save_prediction(post['image'], post['text'], prediction)
             show_post(post, index=i, prediction=prediction)
             st.markdown("---")
