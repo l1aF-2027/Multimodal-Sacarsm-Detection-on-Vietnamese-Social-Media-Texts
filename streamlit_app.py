@@ -311,7 +311,7 @@ class CombinedSarcasmClassifier:
     def summary(self):
         self.model.summary()
 #-----------------------------------------------------------------------------------------------------
-@st.cache
+@st.cache_data(persist="disk")
 def load_combined_sarcasm_classifier():
     classifier = CombinedSarcasmClassifier()
     classifier.build()
