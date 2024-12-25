@@ -114,15 +114,16 @@ def show_post(post):
                 margin-bottom: 20px;
                 box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
             ">
-                <!-- Caption -->
+
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
+                    <span style="font-size: 15px; color: gray;">Posted at {format_timestamp(post['timestamp'])}</span>
+                </div>
+
                 <div style="margin-bottom: 15px;">
                     <p style="font-size: 16px; font-weight: bold; margin: 0;">{post['text']}</p>
                 </div>
                 
-                <!-- Timestamp -->
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
-                    <span style="font-size: 15px; color: gray;">Posted at {format_timestamp(post['timestamp'])}</span>
-                </div>
+                
 
                 
 
