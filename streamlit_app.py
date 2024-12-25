@@ -1,26 +1,19 @@
+import os
+import sys
+def install_packages():
+    try:
+        import streamlit_option_menu
+    except ImportError:
+        os.system(f"{sys.executable} -m pip install streamlit-option-menu")
+
+install_packages()
 import streamlit as st
+from streamlit_option_menu import option_menu
 
-def main():
-    # Thiết lập tiêu đề cho trang web
-    st.title("Website Demo với Menu Chọn")
-
-    # Tạo sidebar với selectbox
-    with st.sidebar:
-        st.header("Menu Lựa Chọn")
-        
-        # Tạo selectbox không có ô tick
-        selected_option = st.selectbox(
-            "Chọn một mục:",
-            ["Mục 1", "Mục 2"]        )
-
-    # Hiển thị nội dung tương ứng với lựa chọn
-    if selected_option == "Mục 1":
-        st.header("Nội dung Mục 1")
-        st.write("Đây là nội dung của mục 1")
-        
-    else:
-        st.header("Nội dung Mục 2")
-        st.write("Đây là nội dung của mục 2")
-
-if __name__ == "__main__":
-    main()
+page = option_menu(
+    menu_title= "AI002",
+    options = ["Main Posts", "Review Posts"],
+    icons = ["clipboard", "check-circle"],
+    default_option = "Main Posts",
+    orientation="horizontal",
+)
