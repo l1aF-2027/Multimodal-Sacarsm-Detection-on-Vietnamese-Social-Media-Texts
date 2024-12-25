@@ -95,15 +95,20 @@ def approve_post(index):
     # Move the post to approved
     st.session_state.approved_posts.append(st.session_state.pending_posts.pop(index))
 
-# Display a single post
+def format_timestamp(timestamp):
+    # Định dạng timestamp từ datetime string sang "Giờ:Phút, Ngày/Tháng/Năm"
+    dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')  # Parse string to datetime
+    return dt.strftime('%H:%M, %d/%m/%Y')  # Format as Hour:Minute, Day/Month/Year
+
 def show_post(post):
     # Container for the post layout
     with st.container():
-        # Display date and time in the top-right corner
+        # Display formatted date and time in the top-right corner
+        formatted_timestamp = format_timestamp(post['timestamp'])
         st.markdown(
             f"""
             <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
-                <span style="font-size: 12px; color: gray;">{post['timestamp']}</span>
+                <span style="font-size: 12px; color: black;">{formatted_timestamp}</span>
             </div>
             """, 
             unsafe_allow_html=True
@@ -113,7 +118,7 @@ def show_post(post):
         st.markdown(f"**{post['text']}**")
 
         # Display image
-        st.image(post['image'], use_column_width=True)
+        st.image(post['image'])
 
 
 if page == 'Main Posts':
