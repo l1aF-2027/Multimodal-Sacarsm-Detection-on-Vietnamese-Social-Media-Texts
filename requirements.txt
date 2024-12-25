@@ -5,3 +5,4 @@ einops
 transformers
 keras
 torch
+opencv-python
