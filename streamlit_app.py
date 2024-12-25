@@ -108,7 +108,7 @@ def encode_image_to_base64(image_path):
         encoded_string = base64.b64encode(f.read()).decode('utf-8')
     return encoded_string
 
-def show_post(post, index):
+def show_post(post):
     # Container for the post layout
     with st.container():
         # Encode image to Base64
