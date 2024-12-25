@@ -100,9 +100,20 @@ def format_timestamp(timestamp):
     dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')  # Parse string to datetime
     return dt.strftime('%H:%M, %d/%m/%Y')  # Format as Hour:Minute, Day/Month/Year
 
-def show_post(post):
+import base64
+
+def encode_image_to_base64(image_path):
+    # Đọc ảnh và encode thành base64
+    with open(image_path, "rb") as f:
+        encoded_string = base64.b64encode(f.read()).decode('utf-8')
+    return encoded_string
+
+def show_post(post, index):
     # Container for the post layout
     with st.container():
+        # Encode image to Base64
+        encoded_image = encode_image_to_base64(post['image'])
+
         # Add a styled div container for the post
         st.markdown(
             f"""
@@ -114,24 +125,24 @@ def show_post(post):
                 margin-bottom: 20px;
                 box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
             ">
-
+                <!-- Timestamp -->
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
                     <span style="font-size: 15px; color: gray;">Posted at {format_timestamp(post['timestamp'])}</span>
                 </div>
 
-
+                <!-- Caption -->
                 <div style="margin-bottom: 15px;">
                     <p style="font-size: 16px; font-weight: bold; margin: 0;">{post['text']}</p>
                 </div>
 
+                <!-- Image -->
                 <div style="text-align: center;">
-                    <img src="data:image/jpeg;base64,{post['image']}" style="max-width: 100%; border-radius: 10px;"/>
+                    <img src="data:image/jpeg;base64,{encoded_image}" style="max-width: 100%; border-radius: 10px;"/>
                 </div>
             </div>
             """, 
             unsafe_allow_html=True
         )
-
 
 if page == 'Main Posts':
     text = st.text_input(label = "Post text", placeholder="Write something here...", label_visibility="hidden")
