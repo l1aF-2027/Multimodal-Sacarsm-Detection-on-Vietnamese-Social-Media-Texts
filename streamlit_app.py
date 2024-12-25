@@ -96,8 +96,8 @@ class CombinedSarcasmClassifier:
         self.model = None
         self.vit_processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
         self.vit_model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224")
-        self.jina_tokenizer = AutoTokenizer.from_pretrained("jinaai/jina-embeddings-v3")
-        self.jina_model = AutoModel.from_pretrained("jinaai/jina-embeddings-v3", 
+        self.jina_tokenizer = AutoTokenizer.from_pretrained("uitnlp/visobert")
+        self.jina_model = AutoModel.from_pretrained("uitnlp/visobert", 
                                                    trust_remote_code=True,
                                                    torch_dtype=torch.float32)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -122,7 +122,7 @@ class CombinedSarcasmClassifier:
         reverse_mapping = {v: k for k, v in self.label_mapping.items()}
         return [reverse_mapping[idx] for idx in numerical_labels]
 
-    def build(self, image_dim=1000, text_dim=1024):
+    def build(self, image_dim=1000, text_dim=768):
         image_input = Input(shape=(image_dim,), name='image_input')
         text_input = Input(shape=(text_dim,), name='text_input')
 
@@ -149,51 +149,34 @@ class CombinedSarcasmClassifier:
         total_images = len(images)
         
         print("\nProcessing images:")
-        if is_test == 1:
-            temp = cv2.imread(images)
-            inputs = self.vit_processor(images=temp, return_tensors="pt").to(self.device)
-            with torch.no_grad():
-                        outputs = self.vit_model(**inputs)
-            features = outputs.logits.cpu().numpy().squeeze()
-            image_features.append(features)
-        else:
-            for i, image in enumerate(images, 1):
-                try:
-                    print(f"Processing image {i}/{total_images}: {image}", end='\r')
-                    
-                        
-                    temp = cv2.imread(image)
-                    inputs = self.vit_processor(images=temp, return_tensors="pt").to(self.device)
-                    with torch.no_grad():
-                        outputs = self.vit_model(**inputs)
-                    features = outputs.logits.cpu().numpy().squeeze()
-                    image_features.append(features)
-                except Exception as e:
-                    print(f"\nError processing image {image}: {str(e)}")
-                    image_features.append(np.zeros(1000))  # Handle errors by adding zero vectors
+        for i, image in enumerate(images, 1):
+            try:
+                print(f"Processing image {i}/{total_images}: {image}", end='\r')
+                temp = cv2.imread(path + image)
+                inputs = self.vit_processor(images=temp, return_tensors="pt").to(self.device)
+                with torch.no_grad():
+                    outputs = self.vit_model(**inputs)
+                features = outputs.logits.cpu().numpy().squeeze()
+                image_features.append(features)
+            except Exception as e:
+                print(f"\nError processing image {image}: {str(e)}")
+                image_features.append(np.zeros(1000))  # Handle errors by adding zero vectors
         
-        text_features = []
         print("\nProcessing texts:")
-        if is_test == 1:
-            inputs = self.jina_tokenizer(texts, return_tensors="pt", padding=True, truncation=True).to(self.device)
-            with torch.no_grad():
-                        outputs = self.jina_model(**inputs)
-            features = outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
-            text_features.append(features)
-        else:
-            total_texts = len(texts)
-            for i, text in enumerate(texts, 1):
-                try:
-                    print(f"Processing text {i}/{total_texts}", end='\r')
-                    inputs = self.jina_tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(self.device)
-                    
-                    with torch.no_grad():
-                        outputs = self.jina_model(**inputs)
-                    features = outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
-                    text_features.append(features)
-                except Exception as e:
-                    print(f"\nError processing text: {str(e)}")
-                    text_features.append(np.zeros(1024))  # Handle errors by adding zero vectors
+        text_features = []
+        total_texts = len(texts)
+        for i, text in enumerate(texts, 1):
+            try:
+                print(f"Processing text {i}/{total_texts}", end='\r')
+                inputs = self.jina_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512).to(self.device)
+                
+                with torch.no_grad():
+                    outputs = self.jina_model(**inputs)
+                features = outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
+                text_features.append(features)
+            except Exception as e:
+                print(f"\nError processing text: {str(e)}")
+                text_features.append(np.zeros(768))  # Handle errors by adding zero vectors
 
         print("\nPreprocessing completed!")
         return np.array(image_features), np.array(text_features)
