@@ -109,37 +109,36 @@ def encode_image_to_base64(image_path):
     return encoded_string
 
 def show_post(post):
-    # Container for the post layout
 
-        # Add a styled div container for the post
-        st.markdown(
-            f"""
-            <div style="
-                background-color: #ffffff; 
-                border: 1px solid #d3d3d3; 
-                border-radius: 15px; 
-                padding: 20px; 
-                margin-bottom: 20px;
-                box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-            ">
-                <!-- Timestamp -->
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
-                    <span style="font-size: 15px; color: gray;">Posted at {format_timestamp(post['timestamp'])}</span>
-                </div>
-
-                <!-- Caption -->
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
-                    <div style="font-size: 16px; font-weight: bold; margin: 0;" class="caption">{post['text']}</div>
-                </div>
-
-                <!-- Image -->
-                <div style="text-align: center;">
-                    <img class="post-image" src="{post['image']}">
-                </div>
+    st.markdown(
+        f"""
+        <div style="
+            background-color: #ffffff; 
+            border: 1px solid #d3d3d3; 
+            border-radius: 15px; 
+            padding: 20px; 
+            margin-bottom: 20px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        ">
+            <!-- Caption -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
+                <div style="font-size: 16px; font-weight: bold; margin: 0;" class="caption">{post['text']}</div>
             </div>
-            """, 
-            unsafe_allow_html=True
-        )
+            <!-- Timestamp -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
+                <span style="font-size: 15px; color: gray;">Posted at {format_timestamp(post['timestamp'])}</span>
+            </div>
+
+            
+
+            <!-- Image -->
+            <div style="text-align: center;">
+                <img class="post-image" src="{post['image']}">
+            </div>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
 
 if page == 'Main Posts':
     text = st.text_input(label = "Post text", placeholder="Write something here...", label_visibility="hidden")
