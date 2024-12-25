@@ -311,7 +311,7 @@ class CombinedSarcasmClassifier:
     def summary(self):
         self.model.summary()
 #-----------------------------------------------------------------------------------------------------
-@st.experimental_singleton
+@st.cache_resource
 def load_combined_sarcasm_classifier():
     classifier = CombinedSarcasmClassifier()
     classifier.build()
