@@ -78,18 +78,20 @@ page = option_menu(
     }
 )
 
-# In-memory data structures for posts
-pending_posts = []
-approved_posts = []
+# Initialize session state variables if not already present
+if 'pending_posts' not in st.session_state:
+    st.session_state.pending_posts = []
+if 'approved_posts' not in st.session_state:
+    st.session_state.approved_posts = []
 
 # Add a new post
 def add_post(post):
-    pending_posts.append(post)
+    st.session_state.pending_posts.append(post)
 
 # Approve a post
 def approve_post(index):
     # Move the post to approved
-    approved_posts.append(pending_posts.pop(index))
+    st.session_state.approved_posts.append(st.session_state.pending_posts.pop(index))
 
 # Display a single post
 def display_post(post):
@@ -99,7 +101,7 @@ def display_post(post):
 
 if page == 'Main Posts':
     
-    text = st.text_input(label="text", placeholder="Post text")
+    text = st.text_area("Post text")
     image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
     if st.button("Submit"):
         if image and text:
@@ -116,18 +118,16 @@ if page == 'Main Posts':
                 "timestamp": str(datetime.now())
             }
             add_post(post)
-            st.write(pending_posts)
             st.success("Your post has been submitted for review!")
         else:
             st.error("Please upload an image and write text.")
             
 elif page == 'Review Posts':
-    st.write(pending_posts)
-    if len(pending_posts) == 0:
+    if len(st.session_state.pending_posts) == 0:
         st.write("No pending posts.")
     else:
         # Display pending posts with approve buttons
-        for i, post in enumerate(pending_posts):
+        for i, post in enumerate(st.session_state.pending_posts):
             display_post(post)
             if st.button(f"Approve Post {i+1}", key=i):
                 approve_post(i)
