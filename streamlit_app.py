@@ -99,7 +99,7 @@ def display_post(post):
 
 if page == 'Main Posts':
     
-    text = st.text_area("Post text")
+    text = st.text_input(placeholder="Post text")
     image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
     if st.button("Submit"):
         if image and text:
