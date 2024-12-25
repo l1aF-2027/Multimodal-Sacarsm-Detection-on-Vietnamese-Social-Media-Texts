@@ -125,11 +125,11 @@ def show_post(post):
                 <p style="font-size: 16px; font-weight: bold; margin: 0;">{post['text']}</p>
             </div>
             
-                
-
-                
-
-                
+            <!-- Image -->
+            <div style="text-align: center;">
+                <img src="data:image/jpeg;base64,{post['image']}" style="max-width: 100%; border-radius: 10px;"/>
+            </div>
+            
             </div>
             """, 
             unsafe_allow_html=True
