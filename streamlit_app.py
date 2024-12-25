@@ -117,7 +117,7 @@ def show_post(post):
             
                 <!-- Image -->
                 <div style="text-align: center;">
-                    <img src="data:image/jpeg;base64,{post['image']}">
+                    <img src="{post['image']}">
                 </div>
                 
                 <!-- Caption -->
