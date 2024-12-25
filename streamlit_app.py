@@ -104,25 +104,27 @@ def display_post(post):
 if page == 'Main Posts':
     
     text = st.text_input(label = "Post text", placeholder="Write something here...", label_visibility="hidden")
-    image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
-    if st.button("Submit"):
-        if image and text:
-            # Save the uploaded image
-            image_path = os.path.join('uploads', image.name)
-            os.makedirs('uploads', exist_ok=True)
-            with open(image_path, "wb") as f:
-                f.write(image.getbuffer())
+    if text:
+        image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
+        if image:
+            if st.button("Submit"):
+                if image and text:
+                    # Save the uploaded image
+                    image_path = os.path.join('uploads', image.name)
+                    os.makedirs('uploads', exist_ok=True)
+                    with open(image_path, "wb") as f:
+                        f.write(image.getbuffer())
 
-            # Create post
-            post = {
-                "image": image_path,
-                "text": text,
-                "timestamp": str(datetime.now())
-            }
-            add_post(post)
-            st.success("Your post has been submitted for review!")
-        else:
-            st.error("Please upload an image and write text.")
+                    # Create post
+                    post = {
+                        "image": image_path,
+                        "text": text,
+                        "timestamp": str(datetime.now())
+                    }
+                    add_post(post)
+                    st.success("Your post has been submitted for review!")
+                else:
+                    st.error("Please upload an image and write text.")
             
 elif page == 'Review Posts':
     if len(st.session_state.pending_posts) == 0:
