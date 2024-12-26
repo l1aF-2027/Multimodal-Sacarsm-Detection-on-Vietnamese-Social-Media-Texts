@@ -516,7 +516,7 @@ if page == 'Main Posts':
                     st.success("Your post has been submitted for review!")
                 else:
                     st.error("Please upload an image and write text.")
-    else:
+    elif count_words(text):
         st.error("The text must be less than or equal to 256 words.")
     if (len(st.session_state.approved_posts) > 0):
         for post in st.session_state.approved_posts:
