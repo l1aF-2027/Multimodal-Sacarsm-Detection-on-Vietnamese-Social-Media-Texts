@@ -427,7 +427,7 @@ def show_post(post, index=None, prediction=None):
             
             <!-- Caption -->
             <div style="margin-bottom: 15px;">
-                <p style="font-size: 16px; font-weight: bold; margin: 0;">{post['text']}</p>
+                <p style="font-size: 16px; margin: 0;">{post['text']}</p>
             </div>
             
             <!-- Image -->
