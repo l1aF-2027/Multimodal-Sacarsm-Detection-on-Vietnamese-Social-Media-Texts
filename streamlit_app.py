@@ -394,7 +394,7 @@ def show_post(post, index=None, prediction=None):
     if post['image'].startswith('http'):  # Online URL
         img_src = post['image']
     else:  # Local file path
-        encoded_image = encode_image(post['image'])
+        encoded_image = encode_image(pro_dir + post['image'])
         img_src = f"data:image/png;base64,{encoded_image}"
     print(prediction)
     # Xác định màu và nhãn cho dự đoán
@@ -453,7 +453,7 @@ def display_post(post):
     if post['image'].startswith('http'):  # Online URL
         img_src = post['image']
     else:  # Local file path
-        encoded_image = encode_image(post['image'])
+        encoded_image = encode_image(pro_dir + post['image'])
         img_src = f"data:image/png;base64,{encoded_image}"
 
     # Container for the post layout
@@ -489,7 +489,7 @@ def display_post(post):
             """, 
             unsafe_allow_html=True
         )
-        
+pro_dir = os.getcwd() + '/'      
 if page == 'Main Posts':
     text = st.text_area(label = "Post text", placeholder="Write something here...", label_visibility="hidden")
     if text:
