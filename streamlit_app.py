@@ -450,7 +450,7 @@ def count_words(input_string):
     cleaned_string = input_string.replace('\n', ' ')
     words = cleaned_string.split()
     word_count = len(words)
-    return word_count <= 256
+    return word_count
 
 def display_post(post):
     # Handle image source
@@ -495,7 +495,7 @@ def display_post(post):
         )     
 if page == 'Main Posts':
     text = st.text_area(label = "Post text", placeholder="Write something here...", label_visibility="hidden")
-    if text and count_words(text):
+    if text and count_words(text) <= 256:
         image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
         if image:
             if st.button("Submit"):
@@ -516,7 +516,7 @@ if page == 'Main Posts':
                     st.success("Your post has been submitted for review!")
                 else:
                     st.error("Please upload an image and write text.")
-    elif count_words(text):
+    elif count_words(text) > 256:
         st.error("The text must be less than or equal to 256 words.")
     if (len(st.session_state.approved_posts) > 0):
         for post in st.session_state.approved_posts:
