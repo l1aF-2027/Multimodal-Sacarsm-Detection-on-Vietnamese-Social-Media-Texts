@@ -9,3 +9,5 @@ opencv-python-headless
 scikit-learn
 tiktoken
 sentencepiece
+platform
+psutil
