@@ -16,15 +16,11 @@ from tensorflow.keras.callbacks import LearningRateScheduler
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import train_test_split
 from keras.saving import register_keras_serializable
-import platform
-import psutil
 #-----------------------------------------------------------------------------------------------------
 st.set_page_config(
     page_title="Multimodal Sarcasm Detection on Vietnamese Social Media Texts",
     page_icon=":material/group:"
 )
-os.system("uname -a")
-os.system("lscpu")
 # Custom CSS for styling
 st.markdown(""" 
     <style>
