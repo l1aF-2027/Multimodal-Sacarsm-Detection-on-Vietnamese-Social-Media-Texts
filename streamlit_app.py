@@ -23,46 +23,8 @@ st.set_page_config(
     page_title="Multimodal Sarcasm Detection on Vietnamese Social Media Texts",
     page_icon=":material/group:"
 )
-def get_system_info():
-    # Thông tin hệ điều hành
-    print("\n=== THÔNG TIN HỆ ĐIỀU HÀNH ===")
-    print(f"Hệ điều hành: {platform.system()} {platform.release()}")
-    print(f"Phiên bản: {platform.version()}")
-    print(f"Kiến trúc: {platform.machine()}")
-    print(f"Processor: {platform.processor()}")
-
-    # Thông tin RAM
-    print("\n=== THÔNG TIN RAM ===")
-    ram = psutil.virtual_memory()
-    print(f"Tổng RAM: {ram.total // (1024**3)} GB")
-    print(f"RAM đang sử dụng: {ram.used // (1024**3)} GB")
-    print(f"RAM còn trống: {ram.available // (1024**3)} GB")
-    print(f"Phần trăm RAM sử dụng: {ram.percent}%")
-
-    # Thông tin ổ đĩa
-    print("\n=== THÔNG TIN Ổ ĐĨA ===")
-    partitions = psutil.disk_partitions()
-    for partition in partitions:
-        try:
-            partition_usage = psutil.disk_usage(partition.mountpoint)
-            print(f"\nỔ đĩa: {partition.device}")
-            print(f"Mount point: {partition.mountpoint}")
-            print(f"Hệ thống tập tin: {partition.fstype}")
-            print(f"Tổng dung lượng: {partition_usage.total // (1024**3)} GB")
-            print(f"Đã sử dụng: {partition_usage.used // (1024**3)} GB")
-            print(f"Còn trống: {partition_usage.free // (1024**3)} GB")
-            print(f"Phần trăm sử dụng: {partition_usage.percent}%")
-        except:
-            continue
-
-    # Thông tin CPU
-    print("\n=== THÔNG TIN CPU ===")
-    print(f"Số lõi vật lý: {psutil.cpu_count(logical=False)}")
-    print(f"Tổng số lõi: {psutil.cpu_count(logical=True)}")
-    print(f"Phần trăm CPU sử dụng: {psutil.cpu_percent()}%")
-
-
-get_system_info()
+os.system("uname -a")
+os.system("lscpu")
 # Custom CSS for styling
 st.markdown(""" 
     <style>
