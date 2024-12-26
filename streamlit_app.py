@@ -19,7 +19,7 @@ from keras.saving import register_keras_serializable
 #-----------------------------------------------------------------------------------------------------
 st.set_page_config(
     page_title="Multimodal Sarcasm Detection on Vietnamese Social Media Texts",
-    page_icon="image.png"
+    page_icon=":material/group:"
 )
 
 # Custom CSS for styling
