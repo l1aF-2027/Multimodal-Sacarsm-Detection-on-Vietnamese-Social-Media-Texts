@@ -185,7 +185,7 @@ class CombinedSarcasmClassifier:
             for i, text in enumerate(texts, 1):
                 try:
                     print(f"Processing text {i}/{total_texts}", end='\r')
-                    inputs = self.jina_tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(self.device)
+                    inputs = self.jina_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512).to(self.device)
                     
                     with torch.no_grad():
                         outputs = self.jina_model(**inputs)
