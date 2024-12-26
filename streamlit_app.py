@@ -404,7 +404,7 @@ def show_post(post, index=None, prediction=None):
         prediction_label = '<span style="color: red; font-weight: bold;">Sarcasm</span>'
     else:
         prediction_label = ''  # Không hiển thị nếu prediction là None
-
+    post['text'] = post['text'].replace('\n', '<br>')
     # Container for the post layout
     with st.container():
         # Styled HTML post
@@ -491,7 +491,7 @@ def display_post(post):
         )
         
 if page == 'Main Posts':
-    text = st.text_input(label = "Post text", placeholder="Write something here...", label_visibility="hidden")
+    text = st.text_area(label = "Post text", placeholder="Write something here...", label_visibility="hidden")
     if text:
         image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
         if image:
