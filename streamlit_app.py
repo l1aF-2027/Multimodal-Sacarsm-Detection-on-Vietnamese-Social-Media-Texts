@@ -24,7 +24,8 @@ import time
 st.set_page_config(
     page_title="Multimodal Sarcasm Detection on Vietnamese Social Media Texts",
     page_icon=":material/group:"
-)st.markdown(
+)
+st.markdown(
     f"""
     <style>
     /* Remove default header and manage app button */
