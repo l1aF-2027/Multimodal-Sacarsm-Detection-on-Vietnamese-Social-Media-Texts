@@ -536,9 +536,12 @@ def show_post(post, index=None, prediction=None):
         with col1:
             if st.button("✔", key=f"approve_{index}", help="Approve post"):
                 approve_post(index)
+                st.experimental_rerun()
         with col2:
             if st.button("✖", key=f"decline_{index}", help="Decline post"):
                 decline_post(index)
+                st.experimental_rerun()
+                
 def count_words(input_string):
     cleaned_string = input_string.replace('\n', ' ')
     words = cleaned_string.split()
@@ -591,7 +594,7 @@ if page == 'Main Posts':
     if text and count_words(text) <= 256:
         image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
         if image:
-            if st.button("Submit"):
+            if st.button("Post"):
                 if image and text:
                     # Save the uploaded image
                     image_path = os.path.join('uploads', image.name)
