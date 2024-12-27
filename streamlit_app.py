@@ -2,8 +2,8 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 import os
 import sys
-import subprocess
-subprocess.check_call([sys.executable, "-y", "pip", "uninstall", "opencv-python"])
+__import__("subprocess").check_call([__import__("sys").executable, "-m", "pip", "uninstall", "-y", "opencv-python"])
+
 from datetime import datetime
 import base64
 import json 
