@@ -15,4 +15,3 @@ paddlepaddle
 wheel 
 setuptools
 cython
-# git+https://github.com/Xuanhoang214/VietnameseTextNormalizer.git

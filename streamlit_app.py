@@ -1,3 +1,6 @@
+import sys
+import subprocess
+subprocess.check_call([sys.executable, "-m", "pip", "install", "git+https://github.com/Xuanhoang214/VietnameseTextNormalizer.git"])
 import streamlit as st
 from streamlit_option_menu import option_menu
 import os
