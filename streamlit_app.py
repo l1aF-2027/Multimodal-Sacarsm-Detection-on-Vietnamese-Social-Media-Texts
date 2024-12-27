@@ -457,8 +457,7 @@ class CombinedSarcasmClassifier:
         start_preprocessing = time.time()
         
         image_features, text_features = self.preprocess_data(x_test_images, x_test_texts, is_test=1)
-        
-        # Đo thời gian cho giai đoạn tiền xử lý
+
         end_preprocessing = time.time()
         preprocessing_time = end_preprocessing - start_preprocessing
         print(f"Preprocessing completed in {preprocessing_time:.2f} seconds.")
