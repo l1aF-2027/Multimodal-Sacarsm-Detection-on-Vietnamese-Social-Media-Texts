@@ -12,4 +12,5 @@ sentencepiece
 easyocr 
 paddleocr 
 paddlepaddle
+Cython
 git+https://github.com/Xuanhoang214/VietnameseTextNormalizer.git
