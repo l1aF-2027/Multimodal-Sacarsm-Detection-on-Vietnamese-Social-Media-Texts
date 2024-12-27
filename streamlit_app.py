@@ -3,7 +3,7 @@ from streamlit_option_menu import option_menu
 import os
 import sys
 import subprocess
-subprocess.check_call([sys.executable, "-m", "pip", "install", "git+https://github.com/Xuanhoang214/VietnameseTextNormalizer.git"])
+subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "opencv-python"])
 from datetime import datetime
 import base64
 import json 
