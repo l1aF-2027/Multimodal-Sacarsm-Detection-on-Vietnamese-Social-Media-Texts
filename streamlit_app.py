@@ -1,14 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 import os
-import subprocess
-
-try:
-    subprocess.check_call([__import__("sys").executable, "-m", "pip", "uninstall", "-y", "opencv-python"])
-except subprocess.CalledProcessError as e:
-    print(f"Uninstall failed: {e}")
-
-
 from datetime import datetime
 import base64
 import json 
