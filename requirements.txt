@@ -15,3 +15,4 @@ paddlepaddle
 wheel 
 setuptools
 cython
+numpy==1.23.5
