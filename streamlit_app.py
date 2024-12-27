@@ -1,6 +1,3 @@
-import sys
-import subprocess
-subprocess.check_call([sys.executable, "-m", "pip", "install", "git+https://github.com/Xuanhoang214/VietnameseTextNormalizer.git"])
 import streamlit as st
 from streamlit_option_menu import option_menu
 import os
@@ -22,7 +19,6 @@ from sklearn.model_selection import train_test_split
 from keras.saving import register_keras_serializable
 from paddleocr import PaddleOCR
 import easyocr
-from PyVietnameseTextNormalizer import Normalizer
 import time
 #-----------------------------------------------------------------------------------------------------
 st.set_page_config(
@@ -98,7 +94,6 @@ page = option_menu(
     }
 )
 #-----------------------------------------------------------------------------------------------------
-N = Normalizer()
 class CombinedSarcasmClassifier:
     def __init__(self):
         self.model = None
@@ -243,7 +238,6 @@ class CombinedSarcasmClassifier:
                     recognized_texts.append(' '.join([text for (_, text, _) in recognized_text]))
         
                 combined_text = "\n".join(recognized_texts)
-                combined_text = N.normalize(combined_text)
                 print(combined_text)
                 text_inputs = self.jina_tokenizer(
                     combined_text, 
