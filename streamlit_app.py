@@ -1,7 +1,8 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 import os
-os.run("pip uninstall opencv-python")
+__import__("subprocess").check_call(["pip", "uninstall", "-y", "opencv-python"])
+
 from datetime import datetime
 import base64
 import json 
