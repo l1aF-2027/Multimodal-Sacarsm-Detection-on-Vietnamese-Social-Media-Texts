@@ -1,8 +1,9 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 import os
-__import__("subprocess").check_call(["pip", "uninstall", "-y", "opencv-python"])
-
+import sys
+import subprocess
+subprocess.check_call([sys.executable, "-m", "pip", "install", "git+https://github.com/Xuanhoang214/VietnameseTextNormalizer.git"])
 from datetime import datetime
 import base64
 import json 
