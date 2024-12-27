@@ -178,10 +178,7 @@ class CombinedSarcasmClassifier:
     
     def preprocess_data(self, images, texts, ocr_file_path, is_test=0):
         
-        # Read OCR data
-        ocr_df = pd.read_csv(ocr_file_path)
-        ocr_df.columns = ['image_name', 'ocr_text']  # Rename columns
-        ocr_dict = dict(zip(ocr_df.image_name, ocr_df.ocr_text))
+
         
         combined_features = []
         total_items = len(images)
@@ -464,7 +461,6 @@ class CombinedSarcasmClassifier:
         image_features, text_features = self.preprocess_data(
             x_test_images, 
             x_test_texts, 
-            ocr_file_path='/kaggle/input/csv-ocr/ocr_text_easyocr.csv', 
             is_test=1
         )
         
