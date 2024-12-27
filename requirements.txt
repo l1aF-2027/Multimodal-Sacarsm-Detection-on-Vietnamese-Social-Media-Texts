@@ -5,7 +5,7 @@ einops
 transformers
 keras
 torch
-opencv-python-minimal
+opencv-python-headless
 scikit-learn==1.2.2
 tiktoken
 sentencepiece
