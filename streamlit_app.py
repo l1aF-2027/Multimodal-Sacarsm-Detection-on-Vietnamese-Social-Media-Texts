@@ -179,7 +179,6 @@ class CombinedSarcasmClassifier:
     def preprocess_data(self, images, texts, is_test=0):
 
         combined_features = []
-        total_items = len(images)
         
         print("\nProcessing images and texts:")
         if is_test == 1:
@@ -188,6 +187,7 @@ class CombinedSarcasmClassifier:
             with torch.no_grad():
                         outputs = self.vit_model(**inputs)
             image_features = outputs.logits.cpu().numpy().squeeze()
+            text_feats = None
             try:
                 ocr_results = self.paddle_ocr.ocr(images, cls=True)
                 recognized_texts = []
@@ -246,86 +246,10 @@ class CombinedSarcasmClassifier:
                     text_outputs = self.jina_model(**text_inputs)
                 text_feats = text_outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
             except Exception as e:
-                print(f"\nError processing item {i}: {e}")
                 text_feats = np.zeros(768)
             # Concatenate image and text features
             combined_feature = np.concatenate([image_features, text_feats])
             combined_features.append(combined_feature)
-        else:
-            path = " "
-            for i, image in enumerate(images, 1):
-                print(f"Processing item {i}/{total_items}: {image}", end='\r')
-                
-                # Process image
-                temp = cv2.imread(path + image)
-                inputs = self.vit_processor(images=temp, return_tensors="pt").to(self.device)
-                with torch.no_grad():
-                    outputs = self.vit_model(**inputs)
-                img_features = outputs.logits.cpu().numpy().squeeze()
-                try:
-                    ocr_results = self.paddle_ocr.ocr(path + image, cls=True)
-                    recognized_texts = []
-                    boxes = []
-            
-                    image = Image.open(path + image)
-            
-                    for line in ocr_results[0]:
-                        if len(line) == 2:
-                            bbox, text = line
-                            confidence = None
-                        elif len(line) == 3:
-                            bbox, text, confidence = line
-                        else:
-                            continue
-            
-                    padding_ratio_y = 0.25
-                    padding_ratio_x = 0.015
-                    width = bbox[2][0] - bbox[0][0]
-                    height = bbox[2][1] - bbox[0][1]
-                    
-                    padding_width = int(width * padding_ratio_x)
-                    padding_height = int(height * padding_ratio_y)
-                    
-                    x_min = max(0, bbox[0][0] - padding_width)
-                    y_min = max(0, bbox[0][1] - padding_height)
-                    x_max = bbox[2][0] + padding_width
-                    y_max = bbox[2][1] + padding_height
-        
-                    boxes.append([x_min, y_min, x_max, y_max])
-            
-                    merged_boxes = self.merge_boxes(boxes)
-            
-                    recognized_texts = [] 
-            
-                    for idx, box in enumerate(merged_boxes):
-                        x_min, y_min, x_max, y_max = map(int, box)
-            
-                        cropped_region = image.crop((x_min, y_min, x_max, y_max))
-                        cropped_region_np = np.array(cropped_region)
-
-                        recognized_text = self.reader.readtext(cropped_region_np)
-                        recognized_texts.append(' '.join([text for (_, text, _) in recognized_text]))
-            
-                    combined_text = "\n".join(recognized_texts)
-                    combined_text = N.normalize(combined_text)
-                    print(combined_text)
-                    text_inputs = self.jina_tokenizer(
-                        combined_text, 
-                        return_tensors="pt", 
-                        padding=True, 
-                        truncation=True, 
-                        max_length=512
-                    ).to(self.device)
-                    
-                    with torch.no_grad():
-                        text_outputs = self.jina_model(**text_inputs)
-                    text_feats = text_outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
-                except Exception as e:
-                    print(f"\nError processing item {i}: {e}")
-                    text_feats = np.zeros(768)
-                # Concatenate image and text features
-                combined_feature = np.concatenate([img_features, text_feats])
-                combined_features.append(combined_feature)
             
             
         text_features = []
@@ -336,20 +260,6 @@ class CombinedSarcasmClassifier:
                         outputs = self.jina_model(**inputs)
             features = outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
             text_features.append(features)
-        else:
-            total_texts = len(texts)
-            for i, text in enumerate(texts, 1):
-                try:
-                    print(f"Processing text {i}/{total_texts}", end='\r')
-                    inputs = self.jina_tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512).to(self.device)
-                    
-                    with torch.no_grad():
-                        outputs = self.jina_model(**inputs)
-                    features = outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
-                    text_features.append(features)
-                except Exception as e:
-                    print(f"\nError processing text: {str(e)}")
-                    text_features.append(np.zeros(1024))  # Handle errors by adding zero vectors
 
         print("\nPreprocessing completed!")
         return np.array(combined_features), np.array(text_features)
