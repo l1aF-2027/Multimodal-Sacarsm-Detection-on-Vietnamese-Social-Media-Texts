@@ -6,6 +6,10 @@ transformers
 keras
 torch
 opencv-python-headless
-scikit-learn
+scikit-learn==1.2.2
 tiktoken
 sentencepiece
+easyocr 
+paddleocr 
+paddlepaddle
+git+https://github.com/Xuanhoang214/VietnameseTextNormalizer.git

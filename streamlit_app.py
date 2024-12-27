@@ -12,10 +12,15 @@ import torch
 from transformers import AutoImageProcessor, AutoModelForImageClassification, AutoTokenizer, AutoModel, AutoModelForMaskedLM
 import numpy as np
 import cv2
+from PIL import Image
 from tensorflow.keras.callbacks import LearningRateScheduler
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import train_test_split
 from keras.saving import register_keras_serializable
+from paddleocr import PaddleOCR
+import easyocr
+from PyVietnameseTextNormalizer import Normalizer
+import time
 #-----------------------------------------------------------------------------------------------------
 st.set_page_config(
     page_title="Multimodal Sarcasm Detection on Vietnamese Social Media Texts",
@@ -90,17 +95,19 @@ page = option_menu(
     }
 )
 #-----------------------------------------------------------------------------------------------------
+N = Normalizer()
 class CombinedSarcasmClassifier:
     def __init__(self):
         self.model = None
         self.vit_processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
         self.vit_model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224")
-        self.jina_tokenizer = AutoTokenizer.from_pretrained("uitnlp/visobert", use_fast=False)
+        self.jina_tokenizer = AutoTokenizer.from_pretrained("uitnlp/visobert")
         self.jina_model = AutoModel.from_pretrained("uitnlp/visobert", 
                                                    trust_remote_code=True,
                                                    torch_dtype=torch.float32)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
+        self.paddle_ocr = PaddleOCR(use_angle_cls=True, lang='vi', use_gpu=True)
+        self.reader = easyocr.Reader(['en', 'vi'])
         # Define label mapping
         self.label_mapping = {
             'not-sarcasm': 0,
@@ -121,7 +128,7 @@ class CombinedSarcasmClassifier:
         reverse_mapping = {v: k for k, v in self.label_mapping.items()}
         return [reverse_mapping[idx] for idx in numerical_labels]
 
-    def build(self, image_dim=1000, text_dim=768):
+    def build(self, image_dim=1768, text_dim=768):
         image_input = Input(shape=(image_dim,), name='image_input')
         text_input = Input(shape=(text_dim,), name='text_input')
 
@@ -142,35 +149,193 @@ class CombinedSarcasmClassifier:
         output = Dense(2, activation='softmax', name='output')(dropout_combined)
 
         self.model = Model(inputs=[image_input, text_input], outputs=output)
-
-    def preprocess_data(self, images, texts, is_test=0):
-        image_features = []
-        total_images = len(images)
         
-        print("\nProcessing images:")
+    def merge_boxes(self, boxes, threshold_percent=9):
+        merged_boxes = []
+        
+        boxes_with_index = [(box, idx) for idx, box in enumerate(boxes)]
+        boxes_with_index.sort(key=lambda x: x[0][1])  # Sort by y_min
+        
+        while boxes_with_index:
+            current_box, current_idx = boxes_with_index.pop(0)
+            x_min, y_min, x_max, y_max = current_box
+            merged = False
+            
+            for i, (box, idx) in enumerate(merged_boxes):
+                bx_min, by_min, bx_max, by_max = box
+                bw = abs(bx_max - bx_min) * (threshold_percent / 100)
+                bh = abs(by_max - by_min) * (threshold_percent / 100)
+                                 
+                if ((abs(y_min-by_max)<bh and y_max > by_min) or 
+                    (abs(x_min-bx_max)<bw and x_max > bx_min)):  
+                    merged_boxes[i] = [min(x_min, bx_min), min(y_min, by_min), max(x_max, bx_max), max(y_max, by_max)]
+                    merged_boxes[i] = (merged_boxes[i], min(current_idx, idx))
+                    merged = True
+                    break
+            
+            if not merged:
+                merged_boxes.append((current_box, current_idx))
+        
+        return [box for box, idx in merged_boxes]
+    
+    def preprocess_data(self, images, texts, ocr_file_path, is_test=0):
+        
+        # Read OCR data
+        ocr_df = pd.read_csv(ocr_file_path)
+        ocr_df.columns = ['image_name', 'ocr_text']  # Rename columns
+        ocr_dict = dict(zip(ocr_df.image_name, ocr_df.ocr_text))
+        
+        combined_features = []
+        total_items = len(images)
+        
+        print("\nProcessing images and texts:")
         if is_test == 1:
             temp = cv2.imread(images)
             inputs = self.vit_processor(images=temp, return_tensors="pt").to(self.device)
             with torch.no_grad():
                         outputs = self.vit_model(**inputs)
-            features = outputs.logits.cpu().numpy().squeeze()
-            image_features.append(features)
-        else:
-            for i, image in enumerate(images, 1):
-                try:
-                    print(f"Processing image {i}/{total_images}: {image}", end='\r')
-                    
-                        
-                    temp = cv2.imread(image)
-                    inputs = self.vit_processor(images=temp, return_tensors="pt").to(self.device)
-                    with torch.no_grad():
-                        outputs = self.vit_model(**inputs)
-                    features = outputs.logits.cpu().numpy().squeeze()
-                    image_features.append(features)
-                except Exception as e:
-                    print(f"\nError processing image {image}: {str(e)}")
-                    image_features.append(np.zeros(1000))  # Handle errors by adding zero vectors
+            image_features = outputs.logits.cpu().numpy().squeeze()
+            try:
+                ocr_results = self.paddle_ocr.ocr(images, cls=True)
+                recognized_texts = []
+                boxes = []
         
+                image = Image.open(images)
+        
+                for line in ocr_results[0]:
+                    if len(line) == 2:
+                        bbox, text = line
+                        confidence = None
+                    elif len(line) == 3:
+                        bbox, text, confidence = line
+                    else:
+                        continue
+        
+                padding_ratio_y = 0.25
+                padding_ratio_x = 0.015
+                width = bbox[2][0] - bbox[0][0]
+                height = bbox[2][1] - bbox[0][1]
+                
+                padding_width = int(width * padding_ratio_x)
+                padding_height = int(height * padding_ratio_y)
+                
+                x_min = max(0, bbox[0][0] - padding_width)
+                y_min = max(0, bbox[0][1] - padding_height)
+                x_max = bbox[2][0] + padding_width
+                y_max = bbox[2][1] + padding_height
+    
+                boxes.append([x_min, y_min, x_max, y_max])
+        
+                merged_boxes = self.merge_boxes(boxes)
+        
+                recognized_texts = [] 
+        
+                for idx, box in enumerate(merged_boxes):
+                    x_min, y_min, x_max, y_max = map(int, box)
+        
+                    cropped_region = image.crop((x_min, y_min, x_max, y_max))
+                    cropped_region_np = np.array(cropped_region)
+
+                    recognized_text = self.reader.readtext(cropped_region_np)
+                    recognized_texts.append(' '.join([text for (_, text, _) in recognized_text]))
+        
+                combined_text = "\n".join(recognized_texts)
+                combined_text = N.normalize(combined_text)
+                print(combined_text)
+                text_inputs = self.jina_tokenizer(
+                    combined_text, 
+                    return_tensors="pt", 
+                    padding=True, 
+                    truncation=True, 
+                    max_length=512
+                ).to(self.device)
+                
+                with torch.no_grad():
+                    text_outputs = self.jina_model(**text_inputs)
+                text_feats = text_outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
+            except Exception as e:
+                print(f"\nError processing item {i}: {e}")
+                text_feats = np.zeros(768)
+            # Concatenate image and text features
+            combined_feature = np.concatenate([image_features, text_feats])
+            combined_features.append(combined_feature)
+        else:
+            path = " "
+            for i, image in enumerate(images, 1):
+                print(f"Processing item {i}/{total_items}: {image}", end='\r')
+                
+                # Process image
+                temp = cv2.imread(path + image)
+                inputs = self.vit_processor(images=temp, return_tensors="pt").to(self.device)
+                with torch.no_grad():
+                    outputs = self.vit_model(**inputs)
+                img_features = outputs.logits.cpu().numpy().squeeze()
+                try:
+                    ocr_results = self.paddle_ocr.ocr(path + image, cls=True)
+                    recognized_texts = []
+                    boxes = []
+            
+                    image = Image.open(path + image)
+            
+                    for line in ocr_results[0]:
+                        if len(line) == 2:
+                            bbox, text = line
+                            confidence = None
+                        elif len(line) == 3:
+                            bbox, text, confidence = line
+                        else:
+                            continue
+            
+                    padding_ratio_y = 0.25
+                    padding_ratio_x = 0.015
+                    width = bbox[2][0] - bbox[0][0]
+                    height = bbox[2][1] - bbox[0][1]
+                    
+                    padding_width = int(width * padding_ratio_x)
+                    padding_height = int(height * padding_ratio_y)
+                    
+                    x_min = max(0, bbox[0][0] - padding_width)
+                    y_min = max(0, bbox[0][1] - padding_height)
+                    x_max = bbox[2][0] + padding_width
+                    y_max = bbox[2][1] + padding_height
+        
+                    boxes.append([x_min, y_min, x_max, y_max])
+            
+                    merged_boxes = self.merge_boxes(boxes)
+            
+                    recognized_texts = [] 
+            
+                    for idx, box in enumerate(merged_boxes):
+                        x_min, y_min, x_max, y_max = map(int, box)
+            
+                        cropped_region = image.crop((x_min, y_min, x_max, y_max))
+                        cropped_region_np = np.array(cropped_region)
+
+                        recognized_text = self.reader.readtext(cropped_region_np)
+                        recognized_texts.append(' '.join([text for (_, text, _) in recognized_text]))
+            
+                    combined_text = "\n".join(recognized_texts)
+                    combined_text = N.normalize(combined_text)
+                    print(combined_text)
+                    text_inputs = self.jina_tokenizer(
+                        combined_text, 
+                        return_tensors="pt", 
+                        padding=True, 
+                        truncation=True, 
+                        max_length=512
+                    ).to(self.device)
+                    
+                    with torch.no_grad():
+                        text_outputs = self.jina_model(**text_inputs)
+                    text_feats = text_outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
+                except Exception as e:
+                    print(f"\nError processing item {i}: {e}")
+                    text_feats = np.zeros(768)
+                # Concatenate image and text features
+                combined_feature = np.concatenate([img_features, text_feats])
+                combined_features.append(combined_feature)
+            
+            
         text_features = []
         print("\nProcessing texts:")
         if is_test == 1:
@@ -195,7 +360,7 @@ class CombinedSarcasmClassifier:
                     text_features.append(np.zeros(1024))  # Handle errors by adding zero vectors
 
         print("\nPreprocessing completed!")
-        return np.array(image_features), np.array(text_features)
+        return np.array(combined_features), np.array(text_features)
 
 
     @staticmethod
@@ -240,7 +405,7 @@ class CombinedSarcasmClassifier:
 
     def train(self, x_train_images, x_train_texts, y_train):
         print("Starting preprocessing...")
-        image_features, text_features = self.preprocess_data(x_train_images, x_train_texts)
+        image_features, text_features = self.preprocess_data(x_train_images, x_train_texts,ocr_file_path='/kaggle/input/csv-ocr/ocr_text_easyocr.csv')
 
         print(f"Image feature shape: {image_features.shape}")
         print(f"Text feature shape: {text_features.shape}")
@@ -263,7 +428,7 @@ class CombinedSarcasmClassifier:
         y_train_encoded = self.encode_labels(y_train[train_idx])
         y_val_encoded = self.encode_labels(y_train[val_idx])
         
-        initial_lr = 1e-4
+        initial_lr = 7.5e-5
 
         print("\nCompiling model...")
         self.model.compile(
@@ -296,9 +461,40 @@ class CombinedSarcasmClassifier:
 
     def predict(self, x_test_images, x_test_texts):
         print("Preprocessing test data...")
-        image_features, text_features = self.preprocess_data(x_test_images, x_test_texts, 1)
+        # Ghi lại thời điểm bắt đầu
+        start_preprocessing = time.time()
+        
+        image_features, text_features = self.preprocess_data(
+            x_test_images, 
+            x_test_texts, 
+            ocr_file_path='/kaggle/input/csv-ocr/ocr_text_easyocr.csv', 
+            is_test=1
+        )
+        
+        # Đo thời gian cho giai đoạn tiền xử lý
+        end_preprocessing = time.time()
+        preprocessing_time = end_preprocessing - start_preprocessing
+        print(f"Preprocessing completed in {preprocessing_time:.2f} seconds.")
+
         print("Making predictions...")
+        # Ghi lại thời điểm bắt đầu dự đoán
+        start_prediction = time.time()
+
+        # Thực hiện dự đoán
         predictions = self.model.predict([image_features, text_features])
+        
+        # Đo thời gian cho giai đoạn dự đoán
+        end_prediction = time.time()
+        prediction_time = end_prediction - start_prediction
+        
+        # Tính thời gian trung bình mỗi mẫu
+        num_samples = len(x_test_images)
+        average_prediction_time = prediction_time / num_samples
+
+        print(f"Prediction completed in {prediction_time:.2f} seconds.")
+        print(f"Average prediction time per sample: {average_prediction_time:.4f} seconds.")
+
+        # Giải mã nhãn dự đoán
         return self.decode_labels(predictions)
 
     def load(self, model_file):
@@ -309,6 +505,7 @@ class CombinedSarcasmClassifier:
 
     def summary(self):
         self.model.summary()
+
 #-----------------------------------------------------------------------------------------------------
 @st.cache_resource(ttl=3600)  
 def load_combined_sarcasm_classifier():
