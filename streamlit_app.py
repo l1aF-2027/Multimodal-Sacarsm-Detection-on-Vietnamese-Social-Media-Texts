@@ -24,7 +24,40 @@ import time
 st.set_page_config(
     page_title="Multimodal Sarcasm Detection on Vietnamese Social Media Texts",
     page_icon=":material/group:"
+)st.markdown(
+    f"""
+    <style>
+    /* Remove default header and manage app button */
+    .stApp [data-testid="stHeader"]{{
+        display:none;
+    }}
+    .stApp [data-testid="manage-app-button"]{{
+        display:none;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
 )
+
+st.markdown(
+    """
+    <style>
+    [data-testid="column"]:first-child {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 33%;
+        height: 100%;
+        overflow: hidden;
+    }
+    [data-testid="column"]:last-child {
+        margin-left: 33%;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Custom CSS for styling
 st.markdown(""" 
     <style>
