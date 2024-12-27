@@ -176,10 +176,8 @@ class CombinedSarcasmClassifier:
         
         return [box for box, idx in merged_boxes]
     
-    def preprocess_data(self, images, texts, ocr_file_path, is_test=0):
-        
+    def preprocess_data(self, images, texts, is_test=0):
 
-        
         combined_features = []
         total_items = len(images)
         
@@ -458,11 +456,7 @@ class CombinedSarcasmClassifier:
         # Ghi lại thời điểm bắt đầu
         start_preprocessing = time.time()
         
-        image_features, text_features = self.preprocess_data(
-            x_test_images, 
-            x_test_texts, 
-            is_test=1
-        )
+        image_features, text_features = self.preprocess_data(x_test_images, x_test_texts, is_test=1)
         
         # Đo thời gian cho giai đoạn tiền xử lý
         end_preprocessing = time.time()
