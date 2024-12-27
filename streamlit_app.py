@@ -536,12 +536,9 @@ def show_post(post, index=None, prediction=None):
         with col1:
             if st.button("✔", key=f"approve_{index}", help="Approve post"):
                 approve_post(index)
-                st.experimental_rerun()
         with col2:
             if st.button("✖", key=f"decline_{index}", help="Decline post"):
                 decline_post(index)
-                st.experimental_rerun()
-                
 def count_words(input_string):
     cleaned_string = input_string.replace('\n', ' ')
     words = cleaned_string.split()
