@@ -437,7 +437,7 @@ class CombinedSarcasmClassifier:
         self.model.summary()
 
 #-----------------------------------------------------------------------------------------------------
-@st.cache_resource(ttl=1800)  
+@st.cache_resource
 def load_combined_sarcasm_classifier():
     classifier = CombinedSarcasmClassifier()
     classifier.build()
