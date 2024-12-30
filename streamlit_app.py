@@ -11,6 +11,7 @@ from tensorflow.keras.layers import Input, Dense, concatenate, Dropout, GlobalAv
 import torch
 from transformers import AutoImageProcessor, AutoModelForImageClassification, AutoTokenizer, AutoModel, AutoModelForMaskedLM
 import numpy as np
+import cv2
 from PIL import Image
 from tensorflow.keras.callbacks import LearningRateScheduler
 from sklearn.model_selection import StratifiedShuffleSplit
@@ -215,7 +216,7 @@ class CombinedSarcasmClassifier:
         
         print("\nProcessing images and texts:")
         if is_test == 1:
-            img = Image.open(images)
+            temp = cv2.imread(images)
             inputs = self.vit_processor(images=temp, return_tensors="pt").to(self.device)
             with torch.no_grad():
                         outputs = self.vit_model(**inputs)
@@ -624,7 +625,7 @@ if page == 'Main Posts':
     if text and count_words(text) <= 256:
         image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
         if image:
-            img = Image.open(image)
+            img = cv2.imread(image)
             height, width = img.shape[:2]
             if height > 224 or width > 224:
                 st.error("Please upload an image with dimensions less than or equal to 224x224.")
