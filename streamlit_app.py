@@ -216,7 +216,7 @@ class CombinedSarcasmClassifier:
         
         print("\nProcessing images and texts:")
         if is_test == 1:
-            temp = cv2.imread(images)
+            temp = Image.open(images)
             inputs = self.vit_processor(images=temp, return_tensors="pt").to(self.device)
             with torch.no_grad():
                         outputs = self.vit_model(**inputs)
@@ -625,29 +625,29 @@ if page == 'Main Posts':
     if text and count_words(text) <= 256:
         image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
         if image:
-            img = cv2.imread(image)
-            height, width = img.shape[:2]
-            if height > 224 or width > 224:
-                st.error("Please upload an image with dimensions less than or equal to 224x224.")
-            else:
-                if st.button("Post"):
-                    if image and text:
-                        # Save the uploaded image
-                        image_path = os.path.join('uploads', image.name)
-                        os.makedirs('uploads', exist_ok=True)
-                        with open(image_path, "wb") as f:
-                            f.write(image.getbuffer())
+            img = Image.open(image)
+            # height, width = img.shape[:2]
+            # if height > 224 or width > 224:
+            #     st.error("Please upload an image with dimensions less than or equal to 224x224.")
+            # else:
+            if st.button("Post"):
+                if image and text:
+                    # Save the uploaded image
+                    image_path = os.path.join('uploads', image.name)
+                    os.makedirs('uploads', exist_ok=True)
+                    with open(image_path, "wb") as f:
+                        f.write(image.getbuffer())
 
-                        # Create post
-                        post = {
-                            "image": image_path,
-                            "text": text,
-                            "timestamp": str(datetime.now())
-                        }
-                        add_post(post)
-                        st.success("Your post has been submitted for review!")
-                    else:
-                        st.error("Please upload an image and write text.")
+                    # Create post
+                    post = {
+                        "image": image_path,
+                        "text": text,
+                        "timestamp": str(datetime.now())
+                    }
+                    add_post(post)
+                    st.success("Your post has been submitted for review!")
+                else:
+                    st.error("Please upload an image and write text.")
     elif count_words(text) > 256:
         st.error("The text must be less than or equal to 256 words.")
     if (len(st.session_state.approved_posts) > 0):
