@@ -102,7 +102,7 @@ st.markdown("""
 # Custom title with banner image and group name
 st.markdown(""" 
     <div class="banner-container">
-        <img class="banner-image" src="https://scontent.fsgn5-10.fna.fbcdn.net/v/t39.30808-6/343567058_5683586315079218_583712912555665595_n.png?_nc_cat=110&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=khKFog7hPmoQ7kNvgHLKP40&_nc_zt=23&_nc_ht=scontent.fsgn5-10.fna&_nc_gid=AjVYUgFwYLBQPMso_7Cvefs&oh=00_AYARFFGGZ_XRkK93IJLRNrAkKdnBPE3qsewVZ9x3GLRwlw&oe=6771C2A6">
+        <img class="banner-image" src="https://th.bing.com/th/id/OIP.H7M0FNk53OGh1LAVDCCwcQHaCz?rs=1&pid=ImgDetMain">
         <div class="group-name">Nhóm 5 - Tư duy Trí tuệ nhân tạo - AI002.P11</div>
     </div>
 """, unsafe_allow_html=True)
