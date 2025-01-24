@@ -626,14 +626,15 @@ if page == 'Main Posts':
         image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
         if image:
             img = Image.open(image)
-            height, width = img.shape[:2]
-            if height > 224 or width > 224:
+            height, width = img.size
+            print(img.size)
+            if height < 224 or width < 224:
                 st.error("Please upload an image with dimensions less than or equal to 224x224.")
             else:
                 if st.button("Post"):
                     if image and text:
                         # Save the uploaded image
-                        image_path = os.path.join(os.getcwd + '/uploads', image.name)
+                        image_path = os.path.join(os.getcwd() + '/uploads', image.name)
                         os.makedirs('uploads', exist_ok=True)
                         with open(image_path, "wb") as f:
                             f.write(image.getbuffer())
