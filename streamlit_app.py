@@ -520,6 +520,7 @@ def encode_image(image_path):
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode()
     except Exception as e:
+        st.write(os.getcwd())
         st.write(e)
         logging.error(f"File not found: {image_path}")
         return None
