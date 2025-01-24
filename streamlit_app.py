@@ -655,7 +655,7 @@ if page == 'Main Posts':
 
                         # Create post
                         post = {
-                            "image": '/uploads/' + image.name,
+                            "image": 'uploads/' + image.name,
                             "text": text,
                             "timestamp": str(datetime.now())
                         }
