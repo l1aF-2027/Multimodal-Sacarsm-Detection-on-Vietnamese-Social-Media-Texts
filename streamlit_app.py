@@ -520,8 +520,8 @@ def encode_image(image_path):
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode()
     except Exception as e:
-        st.write(os.getcwd())
-        st.write(e)
+        # st.write(os.getcwd())
+        # st.write(e)
         logging.error(f"File not found: {image_path}")
         return None
 
@@ -581,9 +581,11 @@ def show_post(post, index=None, prediction=None):
         with col1:
             if st.button("✔", key=f"approve_{index}", help="Approve post"):
                 approve_post(index)
+                st.rerun()
         with col2:
             if st.button("✖", key=f"decline_{index}", help="Decline post"):
                 decline_post(index)
+                st.rerun()
 def count_words(input_string):
     cleaned_string = input_string.replace('\n', ' ')
     words = cleaned_string.split()
@@ -592,7 +594,7 @@ def count_words(input_string):
 
 def display_post(post):
     # Handle image source
-    st.write(os.getcwd())
+    # st.write(os.getcwd())
     if post['image'].startswith('http'):  # Online URL
         img_src = post['image']
     else:  # Local file path
