@@ -592,6 +592,7 @@ def count_words(input_string):
 
 def display_post(post):
     # Handle image source
+    st.write(os.getcwd())
     if post['image'].startswith('http'):  # Online URL
         img_src = post['image']
     else:  # Local file path
