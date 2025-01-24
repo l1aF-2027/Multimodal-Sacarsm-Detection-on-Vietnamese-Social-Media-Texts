@@ -404,7 +404,6 @@ class CombinedSarcasmClassifier:
         start_preprocessing = time.time()
         
         image_features, text_features = self.preprocess_data(x_test_images, x_test_texts, is_test=1)
-        st.write(image_features)
         end_preprocessing = time.time()
         preprocessing_time = end_preprocessing - start_preprocessing
         print(f"Preprocessing completed in {preprocessing_time:.2f} seconds.")
@@ -520,8 +519,6 @@ def encode_image(image_path):
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode()
     except Exception as e:
-        # st.write(os.getcwd())
-        # st.write(e)
         logging.error(f"File not found: {image_path}")
         return None
 
@@ -594,7 +591,6 @@ def count_words(input_string):
 
 def display_post(post):
     # Handle image source
-    # st.write(os.getcwd())
     if post['image'].startswith('http'):  # Online URL
         img_src = post['image']
     else:  # Local file path
@@ -684,7 +680,6 @@ elif page == 'Review Posts':
         for i, post in enumerate(st.session_state.pending_posts):
             prediction = get_cached_prediction(post['image'], post['text'])
             if prediction is None:
-                st.write(post['image'])
                 prediction = classifier.predict(post['image'], post['text'])
                 save_prediction(post['image'], post['text'], prediction)
             show_post(post, index=i, prediction=prediction)
