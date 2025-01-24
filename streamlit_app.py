@@ -682,10 +682,14 @@ elif page == 'Review Posts':
     else:
         # Display pending posts with approve buttons
         for i, post in enumerate(st.session_state.pending_posts):
+            if (os.path.exists(os.path.join(os.getcwd(), "uploads"))):
+                st.write('True')
+            else:
+                st.write('False')
             try:
                 prediction = get_cached_prediction(post['image'], post['text'])
             except Exception as e:
-                st.write(os.path.exists(os.path.join(os.getcwd(), "uploads")))
+                
                 prediction = get_cached_prediction(os.getcwd() + post['image'], post['text'])
             if prediction is None:
                 try:
