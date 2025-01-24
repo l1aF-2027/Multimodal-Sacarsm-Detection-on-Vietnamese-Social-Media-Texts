@@ -1,0 +1,5 @@
+[theme]
+base = "light"  # Đặt theme mặc định là sáng
+primaryColor = "#1E90FF"  # Màu chính (xanh dương nhạt)
+secondaryBackgroundColor = "#ADD8E6"  # Màu nền phụ (xanh dương nhạt hơn)
+textColor = "#000000"  # Màu chữ (đen)
