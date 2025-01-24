@@ -403,8 +403,8 @@ class CombinedSarcasmClassifier:
         # Ghi lại thời điểm bắt đầu
         start_preprocessing = time.time()
         
-        st.write(x_test_images)
         image_features, text_features = self.preprocess_data(x_test_images, x_test_texts, is_test=1)
+        st.write(image_features)
         end_preprocessing = time.time()
         preprocessing_time = end_preprocessing - start_preprocessing
         print(f"Preprocessing completed in {preprocessing_time:.2f} seconds.")
@@ -682,20 +682,9 @@ elif page == 'Review Posts':
     else:
         # Display pending posts with approve buttons
         for i, post in enumerate(st.session_state.pending_posts):
-            if (os.path.exists(os.path.join(os.getcwd(), "uploads"))):
-                st.write('True')
-            else:
-                st.write('False')
-            try:
-                prediction = get_cached_prediction(post['image'], post['text'])
-            except Exception as e:
-                
-                prediction = get_cached_prediction(os.getcwd() + post['image'], post['text'])
+            prediction = get_cached_prediction(os.getcwd() + post['image'], post['text'])
             if prediction is None:
-                try:
-                    prediction = classifier.predict(post['image'], post['text'])
-                except Exception as e:
-                    prediction = classifier.predict(os.getcwd() + post['image'], post['text'])
+                prediction = classifier.predict(os.getcwd() + post['image'], post['text'])
                 save_prediction(post['image'], post['text'], prediction)
             show_post(post, index=i, prediction=prediction)
             st.markdown("---")
