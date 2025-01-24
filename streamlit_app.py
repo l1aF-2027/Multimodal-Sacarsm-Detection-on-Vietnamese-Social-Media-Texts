@@ -655,7 +655,7 @@ if page == 'Main Posts':
 
                         # Create post
                         post = {
-                            "image": '/uploads/' + image.name,
+                            "image": 'uploads/' + image.name,
                             "text": text,
                             "timestamp": str(datetime.now())
                         }
@@ -684,6 +684,7 @@ elif page == 'Review Posts':
         for i, post in enumerate(st.session_state.pending_posts):
             prediction = get_cached_prediction(post['image'], post['text'])
             if prediction is None:
+                st.write(post['image'])
                 prediction = classifier.predict(post['image'], post['text'])
                 save_prediction(post['image'], post['text'], prediction)
             show_post(post, index=i, prediction=prediction)
