@@ -682,9 +682,15 @@ elif page == 'Review Posts':
     else:
         # Display pending posts with approve buttons
         for i, post in enumerate(st.session_state.pending_posts):
-            prediction = get_cached_prediction(post['image'], post['text'])
+            try:
+                prediction = get_cached_prediction(post['image'], post['text'])
+            except Exception as e:
+                prediction = get_cached_prediction(os.getcwd() + post['image'], post['text'])
             if prediction is None:
-                prediction = classifier.predict(post['image'], post['text'])
+                try:
+                    prediction = classifier.predict(post['image'], post['text'])
+                except Exception as e:
+                    prediction = classifier.predict(os.getcwd() + post['image'], post['text'])
                 save_prediction(post['image'], post['text'], prediction)
             show_post(post, index=i, prediction=prediction)
             st.markdown("---")
