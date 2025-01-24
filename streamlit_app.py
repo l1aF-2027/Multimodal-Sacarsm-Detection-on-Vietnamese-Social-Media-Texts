@@ -514,16 +514,13 @@ def format_timestamp(timestamp):
     dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')  # Parse string to datetime
     return dt.strftime('%H:%M, %d/%m/%Y')  # Format as Hour:Minute, Day/Month/Year
 
-import logging
-
-logging.basicConfig(level=logging.ERROR)
 
 def encode_image(image_path):
     try:
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode()
     except Exception as e:
-        print(e)
+        st.write(e)
         logging.error(f"File not found: {image_path}")
         return None
 
