@@ -646,7 +646,7 @@ if page == 'Main Posts':
                 if st.button("Post"):
                     if image and text:
                         # Save the uploaded image
-                        image_path = os.path.join('.\\uploads', image.name)
+                        image_path = os.path.join('/mount/src/multimodal-sacarsm-detection-on-vietnamese-social-media-texts/uploads', image.name)
                         os.makedirs('uploads', exist_ok=True)
                         with open(image_path, "wb") as f:
                             f.write(image.getbuffer())
