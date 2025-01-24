@@ -1,2 +1,3 @@
 [theme]
-base = "light"  # Đặt theme mặc định là sáng
+base = "light" 
+primaryColor = "#1E90FF"
