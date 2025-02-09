@@ -136,20 +136,17 @@ class CombinedSarcasmClassifier:
         self.model = None
         self.vit_processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
         self.vit_model = AutoModelForImageClassification.from_pretrained("google/vit-base-patch16-224")
-        self.jina_tokenizer = AutoTokenizer.from_pretrained("jinaai/jina-embeddings-v3")
-        self.jina_model = AutoModel.from_pretrained("jinaai/jina-embeddings-v3", 
+        self.jina_tokenizer = AutoTokenizer.from_pretrained("uitnlp/visobert")
+        self.jina_model = AutoModel.from_pretrained("uitnlp/visobert", 
                                                    trust_remote_code=True,
                                                    torch_dtype=torch.float32)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.paddle_ocr = PaddleOCR(use_angle_cls=True, lang='vi', use_gpu=True)
         self.reader = easyocr.Reader(['en', 'vi'])
         # Define label mapping
-         # Define label mapping
         self.label_mapping = {
             'not-sarcasm': 0,
-            'image-sarcasm': 1,
-            'text-sarcasm': 2,
-            'multi-sarcasm': 3
+            'sarcasm': 1
         }
         
         # Ensure models are in float32
@@ -159,53 +156,73 @@ class CombinedSarcasmClassifier:
     def encode_labels(self, labels):
         """Convert text labels to one-hot encoded format"""
         numerical_labels = [self.label_mapping[label] for label in labels]
-        return tf.keras.utils.to_categorical(numerical_labels, num_classes=4)
+        return tf.keras.utils.to_categorical(numerical_labels, num_classes=2)
 
     def decode_labels(self, one_hot_labels):
         numerical_labels = np.argmax(one_hot_labels, axis=1)
         reverse_mapping = {v: k for k, v in self.label_mapping.items()}
         return [reverse_mapping[idx] for idx in numerical_labels]
 
-    def build(self, image_dim=2024, text_dim=768):
+    def build(self, image_dim=1768, text_dim=768):
         image_input = Input(shape=(image_dim,), name='image_input')
         text_input = Input(shape=(text_dim,), name='text_input')
-    
+
         # Image processing branch
-        image_dense1 = Dense(1024, activation='relu')(image_input)
-        # image_dropout1 = Dropout(0.1)(image_dense1)
-        image_dense2 = Dense(512, activation='relu')(image_dense1)
-        # image_dropout2 = Dropout(0.1)(image_dense2)
-    
+        image_dense = Dense(1024, activation='relu')(image_input)
+        image_dropout = Dropout(0.3)(image_dense)
+        image_dense2 = Dense(512, activation='relu')(image_dropout)
+
         # Text processing branch
-        text_dense1 = Dense(512, activation='relu')(text_input)
-        # text_dropout1 = Dropout(0.1)(text_dense1)
-        text_dense2 = Dense(256, activation='relu')(text_dense1)
-        # text_dropout2 = Dropout(0.1)(text_dense2)
-    
+        text_dense = Dense(512, activation='relu')(text_input)
+        text_dropout = Dropout(0.3)(text_dense)
+        text_dense2 = Dense(256, activation='relu')(text_dropout)
+
         # Combine both branches
         combined = concatenate([image_dense2, text_dense2])
-        dense_combined1 = Dense(768, activation='relu')(combined)
-        # dropout_combined1 = Dropout(0.1)(dense_combined1)
-        dense_combined2 = Dense(384, activation='relu')(dense_combined1)
-        # dropout_combined2 = Dropout(0.1)(dense_combined2)
-    
-        # Output layer
-        output = Dense(4, activation='softmax', name='output')(dense_combined2)
-    
-        # Create the model
-        self.model = Model(inputs=[image_input, text_input], outputs=output, name='multimodal_classifier')
+        dense_combined = Dense(768, activation='relu')(combined)
+        dropout_combined = Dropout(0.3)(dense_combined)
+        output = Dense(2, activation='softmax', name='output')(dropout_combined)
 
-
+        self.model = Model(inputs=[image_input, text_input], outputs=output)
+        
+    def merge_boxes(self, boxes, threshold_percent=9):
+        merged_boxes = []
+        
+        boxes_with_index = [(box, idx) for idx, box in enumerate(boxes)]
+        boxes_with_index.sort(key=lambda x: x[0][1])  # Sort by y_min
+        
+        while boxes_with_index:
+            current_box, current_idx = boxes_with_index.pop(0)
+            x_min, y_min, x_max, y_max = current_box
+            merged = False
+            
+            for i, (box, idx) in enumerate(merged_boxes):
+                bx_min, by_min, bx_max, by_max = box
+                bw = abs(bx_max - bx_min) * (threshold_percent / 100)
+                bh = abs(by_max - by_min) * (threshold_percent / 100)
+                                 
+                if ((abs(y_min-by_max)<bh and y_max > by_min) or 
+                    (abs(x_min-bx_max)<bw and x_max > bx_min)):  
+                    merged_boxes[i] = [min(x_min, bx_min), min(y_min, by_min), max(x_max, bx_max), max(y_max, by_max)]
+                    merged_boxes[i] = (merged_boxes[i], min(current_idx, idx))
+                    merged = True
+                    break
+            
+            if not merged:
+                merged_boxes.append((current_box, current_idx))
+        
+        return [box for box, idx in merged_boxes]
+    
     def preprocess_data(self, images, texts, is_test=0):
 
         combined_features = []
         
         print("\nProcessing images and texts:")
         if is_test == 1:
-            temp = cv2.imread(images)
+            temp = Image.open(images)
             inputs = self.vit_processor(images=temp, return_tensors="pt").to(self.device)
             with torch.no_grad():
-                outputs = self.vit_model(**inputs)
+                        outputs = self.vit_model(**inputs)
             image_features = outputs.logits.cpu().numpy().squeeze()
             text_feats = None
             try:
@@ -253,21 +270,25 @@ class CombinedSarcasmClassifier:
                     recognized_texts.append(' '.join([text for (_, text, _) in recognized_text]))
         
                 combined_text = "\n".join(recognized_texts)
+                print(combined_text)
                 text_inputs = self.jina_tokenizer(
                     combined_text, 
                     return_tensors="pt", 
                     padding=True, 
-                    truncation=True
+                    truncation=True, 
+                    max_length=512
                 ).to(self.device)
                 
                 with torch.no_grad():
                     text_outputs = self.jina_model(**text_inputs)
                 text_feats = text_outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
             except Exception as e:
-                text_feats = np.zeros(1024)
+                text_feats = np.zeros(768)
             # Concatenate image and text features
             combined_feature = np.concatenate([image_features, text_feats])
             combined_features.append(combined_feature)
+            
+            
         text_features = []
         print("\nProcessing texts:")
         if is_test == 1:
@@ -277,7 +298,10 @@ class CombinedSarcasmClassifier:
             features = outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
             text_features.append(features)
 
+        print("\nPreprocessing completed!")
         return np.array(combined_features), np.array(text_features)
+
+
     @staticmethod
     @register_keras_serializable(package="Custom", name="f1_macro")
     def f1_macro(y_true, y_pred):
@@ -286,7 +310,7 @@ class CombinedSarcasmClassifier:
         y_pred_class = tf.argmax(y_pred, axis=1)
         
         f1_scores = []
-        for i in range(4):  # 4 classes
+        for i in range(2):  # Update this based on the number of classes
             true_positives = tf.reduce_sum(tf.cast(
                 tf.logical_and(tf.equal(y_true_class, i), tf.equal(y_pred_class, i)),
                 tf.float32
@@ -320,22 +344,13 @@ class CombinedSarcasmClassifier:
 
     def train(self, x_train_images, x_train_texts, y_train):
         print("Starting preprocessing...")
-        image_features, text_features = self.preprocess_data(x_train_images, x_train_texts)
+        image_features, text_features = self.preprocess_data(x_train_images, x_train_texts,ocr_file_path='/kaggle/input/csv-ocr/ocr_text_easyocr.csv')
 
         print(f"Image feature shape: {image_features.shape}")
         print(f"Text feature shape: {text_features.shape}")
         
         # Convert labels to numerical format for stratification
         numerical_labels = [self.label_mapping[label] for label in y_train]
-                
-        # Calculate class weights for the resampled data
-        # class_weights = compute_class_weight(
-        #     'balanced',
-        #     classes=np.unique(numerical_labels),
-        #     y=numerical_labels
-        # )
-        # class_weight_dict = dict(enumerate(class_weights))
-        # print("Class weights:", class_weight_dict)
         
         # Perform stratified split
         sss = StratifiedShuffleSplit(n_splits=1, test_size=0.3, random_state=42)
@@ -348,9 +363,10 @@ class CombinedSarcasmClassifier:
         val_text_features = text_features[val_idx]
         
         # Encode labels after splitting
-        y_train_encoded = self.encode_labels([y_train[i] for i in train_idx])
-        y_val_encoded = self.encode_labels([y_train[i] for i in val_idx])
-
+        y_train = np.array(y_train)  
+        y_train_encoded = self.encode_labels(y_train[train_idx])
+        y_val_encoded = self.encode_labels(y_train[val_idx])
+        
         initial_lr = 7.5e-5
 
         print("\nCompiling model...")
@@ -374,10 +390,9 @@ class CombinedSarcasmClassifier:
             [train_image_features, train_text_features],
             y_train_encoded,
             epochs=25,
-            batch_size=256,
+            batch_size=16,
             validation_data=([val_image_features, val_text_features], y_val_encoded),
             callbacks=[BatchProgressCallback(), lr_scheduler]
-            # class_weight=class_weight_dict
         )
         
         print("\nTraining completed!")
@@ -385,9 +400,33 @@ class CombinedSarcasmClassifier:
 
     def predict(self, x_test_images, x_test_texts):
         print("Preprocessing test data...")
-        image_features, text_features = self.preprocess_data(x_test_images, x_test_texts, 1)
+        # Ghi lại thời điểm bắt đầu
+        start_preprocessing = time.time()
+        
+        image_features, text_features = self.preprocess_data(x_test_images, x_test_texts, is_test=1)
+        end_preprocessing = time.time()
+        preprocessing_time = end_preprocessing - start_preprocessing
+        print(f"Preprocessing completed in {preprocessing_time:.2f} seconds.")
+
         print("Making predictions...")
+        # Ghi lại thời điểm bắt đầu dự đoán
+        start_prediction = time.time()
+
+        # Thực hiện dự đoán
         predictions = self.model.predict([image_features, text_features])
+        
+        # Đo thời gian cho giai đoạn dự đoán
+        end_prediction = time.time()
+        prediction_time = end_prediction - start_prediction
+        
+        # Tính thời gian trung bình mỗi mẫu
+        num_samples = len(x_test_images)
+        average_prediction_time = prediction_time / num_samples
+
+        print(f"Prediction completed in {prediction_time:.2f} seconds.")
+        print(f"Average prediction time per sample: {average_prediction_time:.4f} seconds.")
+
+        # Giải mã nhãn dự đoán
         return self.decode_labels(predictions)
 
     def load(self, model_file):
@@ -398,6 +437,7 @@ class CombinedSarcasmClassifier:
 
     def summary(self):
         self.model.summary()
+
 #-----------------------------------------------------------------------------------------------------
 @st.cache_resource
 def load_combined_sarcasm_classifier():
@@ -494,12 +534,8 @@ def show_post(post, index=None, prediction=None):
     # Xác định màu và nhãn cho dự đoán
     if prediction == ['not-sarcasm']:
         prediction_label = '<span style="color: green; font-weight: bold;">Not Sarcasm</span>'
-    elif prediction == ['image-sarcasm']:
-        prediction_label = '<span style="color: red; font-weight: bold;">Image Sarcasm</span>'
-    elif prediction == ['text-sarcasm']:
-        prediction_label = '<span style="color: red; font-weight: bold;">Text Sarcasm</span>'
-    elif prediction == ['multi-sarcasm']:
-        prediction_label = '<span style="color: red; font-weight: bold;">Multi Sarcasm</span>'
+    elif prediction == ['sarcasm']:
+        prediction_label = '<span style="color: red; font-weight: bold;">Sarcasm</span>'
     else:
         prediction_label = ''  # Không hiển thị nếu prediction là None
     post['text'] = post['text'].replace('\n', '<br>')
